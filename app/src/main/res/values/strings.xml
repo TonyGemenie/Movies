@@ -1,0 +1,14 @@
+<resources>
+    <string name="app_name">Movies1</string>
+    <string name="movie_db">This product uses the TMDb API but is not endorsed or certified by TMDb.</string>
+    <string name="search_terms">Search Terms</string>
+    <string name="pref_hint_on">ON</string>
+    <string name="pref_hint_off">OFF</string>
+    <string name="top_rated">Top Rated</string>
+    <string name="popular">Popular</string>
+    <string name="top_rated_key">top_rated</string>
+    <string name="popular_key">popular</string>
+    <string name="movie_db_api_key">movie db api key</string>
+    <string name="favorites">Favorites</string>
+    <string name="favorites_key">favorites</string>
+</resources>
