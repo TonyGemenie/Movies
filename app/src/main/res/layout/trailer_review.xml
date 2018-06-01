@@ -11,7 +11,7 @@
         android:layout_height="wrap_content"
         android:layout_centerHorizontal="true"
         android:layout_margin="0dp"
-        android:text="TextView"
+        tools:text="TextView"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -27,5 +27,12 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@+id/review_text"
         app:srcCompat="@android:drawable/bottom_bar" />
+
+    <com.google.android.exoplayer2.ui.PlayerView
+        android:id="@+id/exo_player_view"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+    </com.google.android.exoplayer2.ui.PlayerView>
 
 </android.support.constraint.ConstraintLayout>

@@ -1,13 +1,12 @@
 package one.movie.udacity.movies1;
 
-import android.app.LoaderManager;
-import android.content.AsyncTaskLoader;
-import android.content.Loader;
+import android.arch.lifecycle.Observer;
+import android.arch.lifecycle.ViewModelProvider;
 import android.content.SharedPreferences;
-import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
-import android.graphics.Movie;
+import android.net.Uri;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
@@ -20,28 +19,37 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.SimpleExoPlayer;
+import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
+import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
+import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
+import com.google.android.exoplayer2.trackselection.DefaultTrackSelector;
+import com.google.android.exoplayer2.trackselection.TrackSelection;
+import com.google.android.exoplayer2.trackselection.TrackSelector;
+import com.google.android.exoplayer2.ui.PlayerView;
+import com.google.android.exoplayer2.upstream.BandwidthMeter;
+import com.google.android.exoplayer2.upstream.DataSource;
+import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
+import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
 import com.squareup.picasso.Picasso;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.Response;
 import one.movie.udacity.movies1.Adapter.DetailRecycler;
 import one.movie.udacity.movies1.Utils.ParseJson;
 import one.movie.udacity.movies1.movieDetails.MovieDetails;
 
-public class DetailsActivity extends AppCompatActivity implements
-        DetailRecycler.onListClickListener, LoaderManager.LoaderCallbacks<String>{
+import static one.movie.udacity.movies1.RetrieveWebData.*;
 
-    private static final String MOVIE_ID = "movie_id";
-    private static final String TRAILER = "trailer";
-    private static final String API_KEY = "e95fd204f344fdf4253d4a02a51ca31f";
+public class DetailsActivity extends AppCompatActivity implements
+        DetailRecycler.onListClickListener{
+
     public static final String FAVORITE_STRING = "favorite_string";
     public static final String SIZE = "size";
     @BindView(R.id.plot_text) TextView plotTX;
@@ -53,11 +61,9 @@ public class DetailsActivity extends AppCompatActivity implements
     @BindView(R.id.movie_title) TextView movieTitle;
     @BindViews({R.id.plot_text, R.id.rating_text, R.id.date_text})List<TextView> textViews;
 
-    Bitmap bitmap;
-
-    public static final int SEARCH_LOADER = 2000;
-
     MovieDetails movieDetails;
+
+    public LiveDataMovieDetailsModel mLiveDataMovieDetailsModel;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,21 +74,34 @@ public class DetailsActivity extends AppCompatActivity implements
 
         String movieString = getIntent().getStringExtra(MainActivity.JSON_STRING);
         movieDetails = ParseJson.parseMovieJson(movieString);
-        /*Gson gson = new GsonBuilder().create();
-        movieDetails = gson.fromJson(movieString, MovieDetails.class);*/
+
+        mLiveDataMovieDetailsModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataMovieDetailsModel.class);
+        mLiveDataMovieDetailsModel.setMovieID(movieDetails.getmImage());
+
         populateUI();
 
-        getDetailLoader(true);
-
         ActionBar actionBar = getSupportActionBar();
-        actionBar.setDisplayHomeAsUpEnabled(true);
+        if(actionBar != null) {
+            actionBar.setDisplayHomeAsUpEnabled(true);
+        }
+        subscribe();
     }
 
-    public void getDetailLoader(boolean trailer){
-        Bundle movieData = new Bundle();
-        movieData.putString(MOVIE_ID, movieDetails.getmImage());
-        movieData.putBoolean(TRAILER, trailer);
-        getLoaderManager().initLoader(SEARCH_LOADER, movieData , this);
+    public void subscribe(){
+        Observer<String[]> reviewObs = new Observer<String[]>() {
+            @Override
+            public void onChanged(@Nullable String[] s) {
+                createRecycler(s, reviewList, false);
+            }
+        };
+        Observer<String[]> trailerObs = new Observer<String[]>() {
+            @Override
+            public void onChanged(@Nullable String[] s) {
+                createRecycler(s, trailerList, true);
+            }
+        };
+        mLiveDataMovieDetailsModel.reviews.observe(this, reviewObs);
+        mLiveDataMovieDetailsModel.trailer.observe(this, trailerObs);
     }
 
     public void populateUI(){
@@ -102,19 +121,16 @@ public class DetailsActivity extends AppCompatActivity implements
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-        DetailRecycler detailRecycler = new DetailRecycler(list, this, this, trailer);
+        DetailRecycler detailRecycler = new DetailRecycler(list, this, trailer);
         recyclerView.setAdapter(detailRecycler);
-    }
-
-    public void getReviews(View v){
-        reviewList.setVisibility(View.VISIBLE);
-        //createRecycler(reviewList, false, );
     }
 
     public void addToFavorites(View v){
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         int size = sharedPreferences.getInt(SIZE, 0);
         sharedPreferences.edit().putString(FAVORITE_STRING + size, String.valueOf(movieDetails)).putInt(SIZE, size + 1).apply();
+        MainActivity mainActivity  = new MainActivity();
+        mainActivity.setFavorites();
     }
     
     @Override
@@ -125,73 +141,28 @@ public class DetailsActivity extends AppCompatActivity implements
         return super.onOptionsItemSelected(item);
     }
 
-    private void setMovieTitleColors() {
-        Palette palette = Palette.from(bitmap).generate();
-
-        int defaultPanelColor = 0xFF808080;
-
-        movieTitle.setBackgroundColor(palette.getDarkVibrantColor(defaultPanelColor));
-        movieTitle.setTextColor(palette.getLightMutedColor(defaultPanelColor));
-    }
-
     @Override
-    public void onTrailerClicked(int clickedPosition, Object tag) {
-        if(tag.toString().equals("trailer")){
-            //ExoPlayer
+    public void onTrailerClicked(int clickedPosition, View v) {
+        if(!v.getTag().toString().equals(REVIEWS)){
+            String url = v.getTag().toString();
+
+            BandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
+            TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory(bandwidthMeter);
+            TrackSelector trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
+            SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(this, trackSelector);
+
+            PlayerView exoView = v.findViewById(R.id.exo_player_view);
+            exoView.setPlayer(player);
+
+            DefaultSsChunkSource.Factory chunkFactory = new DefaultSsChunkSource.Factory(
+                    new DefaultDataSourceFactory(this, "app"));
+
+            DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(this, "movie");
+
+            MediaSource videoSource = new SsMediaSource.Factory(chunkFactory, dataSourceFactory)
+                    .createMediaSource(Uri.parse(MOVIE_DB_BASE + movieDetails.getmImage() + VIDEOS + "/" + url));
+
+            player.prepare(videoSource);
         }
-    }
-
-    @Override
-    public Loader<String> onCreateLoader(int id, final Bundle args) {
-        return new AsyncTaskLoader<String>(this) {
-            @Override
-            public String loadInBackground() {
-                String responseString = "";
-                try{
-                    OkHttpClient client = new OkHttpClient();
-                    String searchFor = "/trailers";
-                    for (int i = 0; i < 2; i++) {
-                        Request request = new Request.Builder()
-                                .url(MainActivity.MOVIE_DB_BASE + args.getString(MOVIE_ID) + searchFor + MainActivity.API + API_KEY)
-                                .get()
-                                .build();
-
-                        Response response = client.newCall(request).execute();
-                        responseString += response.body().string();
-                        searchFor = "/reviews";
-                    }
-                if(!searchFor.equals("/trailers")) {
-                    Request bitmapRequest = new Request.Builder()
-                            .url(MainActivity.MOVIE_DB_BASE + args.getString(MOVIE_ID) + searchFor + MainActivity.API + API_KEY)
-                            .get()
-                            .build();
-                    Response bitmapResponse = client.newCall(bitmapRequest).execute();
-                    InputStream inputStream = bitmapResponse.body().byteStream();
-                    bitmap = BitmapFactory.decodeStream(inputStream);
-
-                }
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                return responseString;
-            }
-
-            @Override
-            public void deliverResult(String data) {
-                super.deliverResult(data);
-            }
-        };
-    }
-
-    @Override
-    public void onLoadFinished(Loader<String> loader, String data) {
-
-        //createRecycler(trailerList, true);
-        setMovieTitleColors();
-    }
-
-    @Override
-    public void onLoaderReset(Loader<String> loader) {
-
     }
 }

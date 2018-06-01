@@ -19,7 +19,7 @@ public class SearchFragment extends PreferenceFragmentCompat
         Preference favorites = findPreference(getString(R.string.favorites_key));
         popular.setOnPreferenceChangeListener(this);
         top_rated.setOnPreferenceChangeListener(this);
-        top_rated.setOnPreferenceChangeListener(this);
+        favorites.setOnPreferenceChangeListener(this);
     }
 
     @Override

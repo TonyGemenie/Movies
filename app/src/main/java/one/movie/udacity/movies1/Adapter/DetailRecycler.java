@@ -10,21 +10,23 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.exoplayer2.ui.PlayerView;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
 import one.movie.udacity.movies1.R;
 
+import static one.movie.udacity.movies1.RetrieveWebData.REVIEWS;
+
 public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerReviewVH> {
 
-    String[] mMovieArray;
-    DetailRecycler.onListClickListener mOnListClickListener;
-    Context mContext;
-    boolean mTrailer;
+    private String[] mMovieArray;
+    private DetailRecycler.onListClickListener mOnListClickListener;
+    private boolean mTrailer;
 
-    public DetailRecycler(String[] listarray, DetailRecycler.onListClickListener listener, Context context, Boolean trailer) {
+    public DetailRecycler(String[] listarray, DetailRecycler.onListClickListener listener, Boolean trailer) {
         mMovieArray = listarray;
         mOnListClickListener = listener;
-        mContext = context;
         mTrailer = trailer;
     }
 
@@ -32,19 +34,19 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
     @Override
     public DetailRecycler.TrailerReviewVH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.trailer_review, parent, false);
-        DetailRecycler.TrailerReviewVH viewHolder = new DetailRecycler.TrailerReviewVH(view);
-        return viewHolder;
+        return new DetailRecycler.TrailerReviewVH(view);
     }
 
     @Override
     public void onBindViewHolder(@NonNull DetailRecycler.TrailerReviewVH holder, int position) {
         if(mTrailer) {
             holder.review.setTextSize(30);
-            String trailerNumber = "Trailer" + (position + 1);
+            String trailerNumber = "Trailer " + (position + 1);
             holder.review.setText(trailerNumber);
-            holder.review.setTag("trailer");
+            holder.review.setTag(mMovieArray[position]);
         }else {
             holder.review.setText(mMovieArray[position]);
+            holder.review.setTag(REVIEWS);
         }
     }
 
@@ -54,22 +56,22 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
     }
 
     public interface onListClickListener{
-        void onTrailerClicked(int clickedPosition, Object Tag);
+        void onTrailerClicked(int clickedPosition, View v);
     }
 
     class TrailerReviewVH extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         @BindView(R.id.review_text) TextView review;
 
-
         public TrailerReviewVH(View itemView) {
             super(itemView);
             ButterKnife.bind(this, itemView);
+            itemView.setOnClickListener(this);
         }
 
         @Override
         public void onClick(View v) {
-            mOnListClickListener.onTrailerClicked(getAdapterPosition(), v.getTag());
+            mOnListClickListener.onTrailerClicked(getAdapterPosition(), v);
         }
     }
 }
