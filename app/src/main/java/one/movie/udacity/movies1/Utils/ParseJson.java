@@ -3,7 +3,7 @@ package one.movie.udacity.movies1.Utils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import one.movie.udacity.movies1.movieDetails.MovieDetails;
+import one.movie.udacity.movies1.Database.MovieDetails;
 
 public class ParseJson {
     public static final String TITLE = "title";

@@ -2,16 +2,12 @@ package one.movie.udacity.movies1;
 
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
-import android.content.SharedPreferences;
-import android.graphics.BitmapFactory;
 import android.net.Uri;
-import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.support.v7.graphics.Palette;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.MenuItem;
@@ -19,9 +15,15 @@ import android.view.View;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import com.google.android.exoplayer2.DefaultLoadControl;
+import com.google.android.exoplayer2.DefaultRenderersFactory;
 import com.google.android.exoplayer2.ExoPlayerFactory;
+import com.google.android.exoplayer2.Player;
 import com.google.android.exoplayer2.SimpleExoPlayer;
 import com.google.android.exoplayer2.source.MediaSource;
+import com.google.android.exoplayer2.source.dash.DashChunkSource;
+import com.google.android.exoplayer2.source.dash.DashMediaSource;
+import com.google.android.exoplayer2.source.dash.DefaultDashChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.DefaultSsChunkSource;
 import com.google.android.exoplayer2.source.smoothstreaming.SsMediaSource;
 import com.google.android.exoplayer2.trackselection.AdaptiveTrackSelection;
@@ -33,25 +35,27 @@ import com.google.android.exoplayer2.upstream.BandwidthMeter;
 import com.google.android.exoplayer2.upstream.DataSource;
 import com.google.android.exoplayer2.upstream.DefaultBandwidthMeter;
 import com.google.android.exoplayer2.upstream.DefaultDataSourceFactory;
+import com.google.android.exoplayer2.upstream.DefaultHttpDataSourceFactory;
+import com.google.android.exoplayer2.upstream.TransferListener;
+import com.google.android.exoplayer2.util.Util;
 import com.squareup.picasso.Picasso;
 
-import java.io.InputStream;
 import java.util.List;
 
 import butterknife.BindView;
 import butterknife.BindViews;
 import butterknife.ButterKnife;
 import one.movie.udacity.movies1.Adapter.DetailRecycler;
-import one.movie.udacity.movies1.Utils.ParseJson;
-import one.movie.udacity.movies1.movieDetails.MovieDetails;
+import one.movie.udacity.movies1.Database.MovieDatabase;
+import one.movie.udacity.movies1.Database.VideoReviewDatabase;
+import one.movie.udacity.movies1.Database.MovieDetails;
 
 import static one.movie.udacity.movies1.RetrieveWebData.*;
 
 public class DetailsActivity extends AppCompatActivity implements
         DetailRecycler.onListClickListener{
 
-    public static final String FAVORITE_STRING = "favorite_string";
-    public static final String SIZE = "size";
+    public static final String TRAILER = "size";
     @BindView(R.id.plot_text) TextView plotTX;
     @BindView(R.id.rating_text) TextView ratingTX;
     @BindView(R.id.date_text) TextView dateTX;
@@ -61,7 +65,12 @@ public class DetailsActivity extends AppCompatActivity implements
     @BindView(R.id.movie_title) TextView movieTitle;
     @BindViews({R.id.plot_text, R.id.rating_text, R.id.date_text})List<TextView> textViews;
 
+    MovieDatabase movieDatabase;
+    VideoReviewDatabase videoReviewDatabase;
     MovieDetails movieDetails;
+    DetailRecycler detailRecycler;
+    int movieID;
+    SimpleExoPlayer player;
 
     public LiveDataMovieDetailsModel mLiveDataMovieDetailsModel;
 
@@ -72,11 +81,15 @@ public class DetailsActivity extends AppCompatActivity implements
 
         ButterKnife.bind(this);
 
-        String movieString = getIntent().getStringExtra(MainActivity.JSON_STRING);
-        movieDetails = ParseJson.parseMovieJson(movieString);
+        movieID = getIntent().getIntExtra(MainActivity.MOVIE_ID, 0);
 
-        mLiveDataMovieDetailsModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataMovieDetailsModel.class);
-        mLiveDataMovieDetailsModel.setMovieID(movieDetails.getmImage());
+        movieDatabase = MovieDatabase.getInstance(getApplicationContext());
+        videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
+
+        movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
+
+        mLiveDataMovieDetailsModel = new ViewModelProvider.from(getApplication()).create(LiveDataMovieDetailsModel.class);
+        mLiveDataMovieDetailsModel.getVR();
 
         populateUI();
 
@@ -91,13 +104,15 @@ public class DetailsActivity extends AppCompatActivity implements
         Observer<String[]> reviewObs = new Observer<String[]>() {
             @Override
             public void onChanged(@Nullable String[] s) {
-                createRecycler(s, reviewList, false);
+                createRecycler(reviewList);
+                detailRecycler.setList(videoReviewDatabase.detailsDao().loadReviews(movieID));
             }
         };
         Observer<String[]> trailerObs = new Observer<String[]>() {
             @Override
             public void onChanged(@Nullable String[] s) {
-                createRecycler(s, trailerList, true);
+                createRecycler(trailerList);
+                detailRecycler.setList(videoReviewDatabase.detailsDao().loadVideos(movieID));
             }
         };
         mLiveDataMovieDetailsModel.reviews.observe(this, reviewObs);
@@ -106,31 +121,29 @@ public class DetailsActivity extends AppCompatActivity implements
 
     public void populateUI(){
         Picasso.with(imageView.getContext())
-                .load(movieDetails.getmImage())
+                .load(movieDetails.getPosterPath())
                 .noFade()
                 .noPlaceholder()
                 .into(imageView);
 
-        plotTX.setText(movieDetails.getmPlot());
-        ratingTX.setText(movieDetails.getmRating());
-        dateTX.setText(movieDetails.getmDate());
-        movieTitle.setText(movieDetails.getmTitle());
+        plotTX.setText(movieDetails.getPlot());
+        ratingTX.setText(movieDetails.getRating());
+        dateTX.setText(movieDetails.getDate());
+        movieTitle.setText(movieDetails.getTitle());
     }
 
-    public void createRecycler(String[] list, RecyclerView recyclerView, boolean trailer){
+    public void createRecycler(RecyclerView recyclerView){
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
 
-        DetailRecycler detailRecycler = new DetailRecycler(list, this, trailer);
+        DetailRecycler detailRecycler = new DetailRecycler(this);
         recyclerView.setAdapter(detailRecycler);
     }
 
     public void addToFavorites(View v){
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        int size = sharedPreferences.getInt(SIZE, 0);
-        sharedPreferences.edit().putString(FAVORITE_STRING + size, String.valueOf(movieDetails)).putInt(SIZE, size + 1).apply();
-        MainActivity mainActivity  = new MainActivity();
-        mainActivity.setFavorites();
+        MovieDetails movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
+        movieDetails.setFavorite(true);
+        movieDatabase.movieDao().updateMovie(movieDetails);
     }
     
     @Override
@@ -143,26 +156,44 @@ public class DetailsActivity extends AppCompatActivity implements
 
     @Override
     public void onTrailerClicked(int clickedPosition, View v) {
-        if(!v.getTag().toString().equals(REVIEWS)){
+        if(!v.getTag().toString().equals(TRAILER)){
             String url = v.getTag().toString();
+            //Uri incorrect
+            initializePlayer(Uri.parse(videoReviewDatabase.detailsDao().loadVideos(movieID).get(clickedPosition).getVideoId()));
+        }
+    }
 
-            BandwidthMeter bandwidthMeter = new DefaultBandwidthMeter();
-            TrackSelection.Factory videoTrackSelectionFactory = new AdaptiveTrackSelection.Factory(bandwidthMeter);
-            TrackSelector trackSelector = new DefaultTrackSelector(videoTrackSelectionFactory);
-            SimpleExoPlayer player = ExoPlayerFactory.newSimpleInstance(this, trackSelector);
+    public void initializePlayer(Uri uri){
+        player = ExoPlayerFactory.newSimpleInstance(
+                new DefaultRenderersFactory(this),
+                new DefaultTrackSelector(), new DefaultLoadControl());
 
-            PlayerView exoView = v.findViewById(R.id.exo_player_view);
-            exoView.setPlayer(player);
+        PlayerView playerView = findViewById(R.id.exo_player_view);
+        MediaSource mediaSource = buildMediaSource(uri);
+        playerView.setPlayer(player);
+        player.prepare(mediaSource, true, false);
+    }
 
-            DefaultSsChunkSource.Factory chunkFactory = new DefaultSsChunkSource.Factory(
-                    new DefaultDataSourceFactory(this, "app"));
+    public MediaSource buildMediaSource(Uri uri) {
+        DataSource.Factory manifestDataSourceFactory = new DefaultHttpDataSourceFactory("trailer");
+        DashChunkSource.Factory dashChunkSourceFactory = new DefaultDashChunkSource.Factory(new DefaultHttpDataSourceFactory
+                ("trailer", new DefaultBandwidthMeter()));
+        return new DashMediaSource.Factory(dashChunkSourceFactory, manifestDataSourceFactory).createMediaSource(uri);
+    }
 
-            DataSource.Factory dataSourceFactory = new DefaultDataSourceFactory(this, "movie");
+    @Override
+    public void onPause() {
+        super.onPause();
+        if (Util.SDK_INT <= 23) {
+            player.release();
+        }
+    }
 
-            MediaSource videoSource = new SsMediaSource.Factory(chunkFactory, dataSourceFactory)
-                    .createMediaSource(Uri.parse(MOVIE_DB_BASE + movieDetails.getmImage() + VIDEOS + "/" + url));
-
-            player.prepare(videoSource);
+    @Override
+    public void onStop() {
+        super.onStop();
+        if (Util.SDK_INT > 23) {
+            player.release();
         }
     }
 }

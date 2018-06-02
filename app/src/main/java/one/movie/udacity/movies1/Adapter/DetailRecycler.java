@@ -1,33 +1,27 @@
 package one.movie.udacity.movies1.Adapter;
 
-import android.content.Context;
-import android.media.MediaPlayer;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.ImageView;
 import android.widget.TextView;
 
-import com.google.android.exoplayer2.ui.PlayerView;
+import java.util.List;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import one.movie.udacity.movies1.Database.VideoReviewDetails;
+import one.movie.udacity.movies1.DetailsActivity;
 import one.movie.udacity.movies1.R;
-
-import static one.movie.udacity.movies1.RetrieveWebData.REVIEWS;
 
 public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerReviewVH> {
 
-    private String[] mMovieArray;
+    private List<VideoReviewDetails> mList;
     private DetailRecycler.onListClickListener mOnListClickListener;
-    private boolean mTrailer;
 
-    public DetailRecycler(String[] listarray, DetailRecycler.onListClickListener listener, Boolean trailer) {
-        mMovieArray = listarray;
+    public DetailRecycler(DetailRecycler.onListClickListener listener) {
         mOnListClickListener = listener;
-        mTrailer = trailer;
     }
 
     @NonNull
@@ -39,20 +33,29 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
 
     @Override
     public void onBindViewHolder(@NonNull DetailRecycler.TrailerReviewVH holder, int position) {
-        if(mTrailer) {
+        VideoReviewDetails videoReviewDetails = mList.get(position);
+        if(videoReviewDetails.getVideoId() != null) {
             holder.review.setTextSize(30);
             String trailerNumber = "Trailer " + (position + 1);
             holder.review.setText(trailerNumber);
-            holder.review.setTag(mMovieArray[position]);
+            holder.review.setTag(trailerNumber);
         }else {
-            holder.review.setText(mMovieArray[position]);
-            holder.review.setTag(REVIEWS);
+            holder.review.setText(videoReviewDetails.getContent());
+            holder.review.setTag(DetailsActivity.TRAILER);
         }
+    }
+
+    public void setList(List<VideoReviewDetails> list){
+        mList = list;
+        notifyDataSetChanged();
     }
 
     @Override
     public int getItemCount() {
-        return mMovieArray.length;
+        if (mList == null) {
+            return 0;
+        }
+        return mList.size();
     }
 
     public interface onListClickListener{

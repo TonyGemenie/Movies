@@ -10,20 +10,22 @@ import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.List;
+
 import butterknife.BindView;
 import butterknife.ButterKnife;
+import one.movie.udacity.movies1.Database.MovieDetails;
 import one.movie.udacity.movies1.MainActivity;
 import one.movie.udacity.movies1.R;
 
 
 public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH> {
 
-    public String[] mPosterArray;
+    public List<MovieDetails> mList;
     public vHClickListener mVHClickListener;
     public Context mContext;
 
-    public PosterRecycler(String[] posterArray, vHClickListener listener, Context context) {
-        mPosterArray = posterArray;
+    public PosterRecycler(vHClickListener listener, Context context) {
         mVHClickListener = listener;
         mContext = context;
     }
@@ -34,18 +36,26 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.poster_view, parent, false);
         PosterVH viewHolder = new PosterVH(view);
         return viewHolder;
-
     }
 
     @Override
     public void onBindViewHolder(@NonNull PosterRecycler.PosterVH holder, int position) {
-        String imageUri = MainActivity.MOVIE_DB_IMAGE_BASE + MainActivity.IMAGE_SIZE + mPosterArray[position % mPosterArray.length];
+        MovieDetails movieDetails =  mList.get(position % mList.size());
+        String imageUri = MainActivity.MOVIE_DB_IMAGE_BASE + MainActivity.IMAGE_SIZE + movieDetails.getPosterPath();
         Picasso.with(mContext).load(imageUri).into(holder.posterImage);
+    }
+
+    public void setList(List<MovieDetails> list){
+        mList = list;
+        notifyDataSetChanged();
     }
 
     @Override
     public int getItemCount() {
-        return mPosterArray.length * 4;
+        if(mList == null){
+            return 0;
+        }
+        return mList.size() * 4;
     }
 
     public interface vHClickListener{
@@ -64,7 +74,8 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
 
         @Override
         public void onClick(View v) {
-            mVHClickListener.onPosterClicked(getAdapterPosition(), posterImage);
+            int id = mList.get(getAdapterPosition()).getId();
+            mVHClickListener.onPosterClicked(id, posterImage);
         }
     }
 }
