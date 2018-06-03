@@ -1,10 +1,14 @@
 package one.movie.udacity.movies1.Database;
 
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.PrimaryKey;
 
+@Entity(tableName = "moviedatabase")
 public class MovieDetails {
     boolean favorite;
     boolean popular;
     boolean toprated;
+    @PrimaryKey
     int id;
     int voteCount;
     int popularity;

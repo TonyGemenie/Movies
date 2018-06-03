@@ -1,8 +1,14 @@
 package one.movie.udacity.movies1.Database;
 
+import android.arch.persistence.room.Entity;
+import android.arch.persistence.room.PrimaryKey;
+
+@Entity(tableName = "detailsdatabase")
 public class VideoReviewDetails {
 
+    @PrimaryKey
     int movieID;
+    String imageURL;
     String author;
     String content;
     String reviewid;
@@ -16,7 +22,7 @@ public class VideoReviewDetails {
     String size;
     String type;
 
-    public VideoReviewDetails(int movieID, String author, String content, String reviewid, String reviewurl, String videoId, String iso_639_1,
+    public VideoReviewDetails(int movieID, String imageURL, String author, String content, String reviewid, String reviewurl, String videoId, String iso_639_1,
                               String iso_3166_1, String videoKey, String videoName, String site, String size, String type) {
         this.movieID = movieID;
         this.author = author;
@@ -31,6 +37,13 @@ public class VideoReviewDetails {
         this.site = site;
         this.size = size;
         this.type = type;
+    }
+    public String getImageURL() {
+        return imageURL;
+    }
+
+    public void setImageURL(String imageURL) {
+        this.imageURL = imageURL;
     }
 
     public int getId() {

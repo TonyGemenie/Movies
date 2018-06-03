@@ -15,7 +15,7 @@ public abstract class VideoReviewDatabase extends RoomDatabase {
             if(detailsdatabase == null){
                 synchronized (new Object()) {
                     detailsdatabase = Room.databaseBuilder(context.getApplicationContext(),
-                            VideoReviewDatabase.class, DATABASE)
+                            VideoReviewDatabase.class, VideoReviewDatabase.DATABASE)
                             .build();
                 }
             }

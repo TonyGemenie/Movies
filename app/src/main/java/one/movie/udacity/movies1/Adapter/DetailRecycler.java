@@ -1,11 +1,18 @@
 package one.movie.udacity.movies1.Adapter;
 
+import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.ImageView;
 import android.widget.TextView;
+
+import com.squareup.picasso.Picasso;
+
+import org.json.JSONException;
+import org.json.JSONObject;
 
 import java.util.List;
 
@@ -18,10 +25,12 @@ import one.movie.udacity.movies1.R;
 public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerReviewVH> {
 
     private List<VideoReviewDetails> mList;
+    private Context mContext;
     private DetailRecycler.onListClickListener mOnListClickListener;
 
-    public DetailRecycler(DetailRecycler.onListClickListener listener) {
+    public DetailRecycler(DetailRecycler.onListClickListener listener, Context context) {
         mOnListClickListener = listener;
+        mContext = context;
     }
 
     @NonNull
@@ -35,11 +44,10 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
     public void onBindViewHolder(@NonNull DetailRecycler.TrailerReviewVH holder, int position) {
         VideoReviewDetails videoReviewDetails = mList.get(position);
         if(videoReviewDetails.getVideoId() != null) {
-            holder.review.setTextSize(30);
-            String trailerNumber = "Trailer " + (position + 1);
-            holder.review.setText(trailerNumber);
-            holder.review.setTag(trailerNumber);
+            holder.review.setVisibility(View.GONE);
+            Picasso.with(mContext).load(videoReviewDetails.getImageURL()).into(holder.image);
         }else {
+            holder.image.setVisibility(View.GONE);
             holder.review.setText(videoReviewDetails.getContent());
             holder.review.setTag(DetailsActivity.TRAILER);
         }
@@ -65,6 +73,7 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
     class TrailerReviewVH extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         @BindView(R.id.review_text) TextView review;
+        @BindView(R.id.trailer_image) ImageView image;
 
         public TrailerReviewVH(View itemView) {
             super(itemView);

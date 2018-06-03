@@ -11,4 +11,5 @@
     <string name="movie_db_api_key">movie db api key</string>
     <string name="favorites">Favorites</string>
     <string name="favorites_key">favorites</string>
+    <string name="image_poster">Video Start Image</string>
 </resources>

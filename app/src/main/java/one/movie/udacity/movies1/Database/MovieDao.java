@@ -26,16 +26,28 @@ public interface MovieDao {
     @Delete
     void deleteMovie(MovieDetails movieEntry);
 
-    @Query("SELECT * FROM moviedatabase WHERE type = :id")
+    @Query("SELECT * FROM moviedatabase WHERE id = :id")
     MovieDetails loadMovieID(int id);
 
-    @Query("SELECT * FROM moviedatabase WHERE favorite = true")
+    @Query("SELECT * FROM moviedatabase WHERE favorite = 1")
     LiveData<List<MovieDetails>> loadFavorites();
 
-    @Query("SELECT * FROM moviedatabase WHERE popular = true")
+    @Query("SELECT * FROM moviedatabase WHERE popular = 1")
     LiveData<List<MovieDetails>> loadPopular();
 
-    @Query("SELECT * FROM moviedatabase WHERE toprated = true")
+    @Query("SELECT * FROM moviedatabase WHERE toprated = 1")
     LiveData<List<MovieDetails>> loadTopRated();
+
+    @Query("SELECT * FROM moviedatabase WHERE toprated = 1 OR popular = 1" )
+    LiveData<List<MovieDetails>> loadTopRatedPopular();
+
+    @Query("SELECT * FROM moviedatabase WHERE toprated = 1 OR favorite = 1")
+    LiveData<List<MovieDetails>> loadTopRatedFavorite();
+
+    @Query("SELECT * FROM moviedatabase WHERE popular = 1 OR favorite = 1")
+    LiveData<List<MovieDetails>> loadPopularFavorite();
+
+    @Query("SELECT * FROM moviedatabase WHERE popular = 1 OR favorite = 1 OR toprated = 1")
+    List<MovieDetails> dataCheck();
 
 }

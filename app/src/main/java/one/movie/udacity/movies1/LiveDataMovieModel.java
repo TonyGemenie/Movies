@@ -13,29 +13,18 @@ public class LiveDataMovieModel extends AndroidViewModel {
 
     private LiveData<List<MovieDetails>> mMovies;
 
-    //PlaceHolder true
-    private boolean mPopular = true;
-    private boolean mTop_rated = true;
-    private boolean mFavorites;
-
     public LiveDataMovieModel(Application application) {
         super(application);
         MovieDatabase database = MovieDatabase.getInstance(this.getApplication());
         mMovies = database.movieDao().loadAllMovies();
     }
 
-    public void setPreferences(boolean preference, String key){
-        switch(key){
-            case "popular":
-                mPopular = preference;
-            case "top_rates":
-                mTop_rated = preference;
-            case "favorites":
-                mFavorites = preference;
-        }
+    public LiveData<List<MovieDetails>> getMovies(){
+        return mMovies;
     }
 
-    public LiveData<List<MovieDetails>> getMovies(){
+    public LiveData<List<MovieDetails>> setMovies(LiveData<List<MovieDetails>> list) {
+        mMovies = list;
         return mMovies;
     }
 }

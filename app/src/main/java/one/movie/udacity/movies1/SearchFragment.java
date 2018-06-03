@@ -1,9 +1,15 @@
 package one.movie.udacity.movies1;
 
+import android.arch.lifecycle.Observer;
 import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.support.annotation.Nullable;
 import android.support.v7.preference.Preference;
 import android.support.v7.preference.PreferenceFragmentCompat;
+
+import java.util.List;
+
+import one.movie.udacity.movies1.Database.MovieDetails;
 
 public class SearchFragment extends PreferenceFragmentCompat
         implements SharedPreferences.OnSharedPreferenceChangeListener,
