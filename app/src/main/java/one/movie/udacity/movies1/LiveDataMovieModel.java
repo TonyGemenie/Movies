@@ -12,10 +12,11 @@ import one.movie.udacity.movies1.Database.MovieDetails;
 public class LiveDataMovieModel extends AndroidViewModel {
 
     private LiveData<List<MovieDetails>> mMovies;
+    MovieDatabase database;
 
     public LiveDataMovieModel(Application application) {
         super(application);
-        MovieDatabase database = MovieDatabase.getInstance(this.getApplication());
+        database = MovieDatabase.getInstance(this.getApplication());
         mMovies = database.movieDao().loadAllMovies();
     }
 
@@ -23,8 +24,12 @@ public class LiveDataMovieModel extends AndroidViewModel {
         return mMovies;
     }
 
-    public LiveData<List<MovieDetails>> setMovies(LiveData<List<MovieDetails>> list) {
+    public void setMovies(LiveData<List<MovieDetails>> list) {
         mMovies = list;
-        return mMovies;
     }
+
+    public List<MovieDetails> movieDataCheck(){
+        return database.movieDao().dataCheck();
+    }
+
 }

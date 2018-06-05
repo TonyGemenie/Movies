@@ -1,7 +1,9 @@
 package one.movie.udacity.movies1;
 
+import android.app.Activity;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
+import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
@@ -19,6 +21,8 @@ import com.google.android.youtube.player.YouTubeStandalonePlayer;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.Executors;
 
 import butterknife.BindView;
 import butterknife.BindViews;
@@ -56,44 +60,37 @@ public class DetailsActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_details);
 
         ButterKnife.bind(this);
-
+        final MovieExecutors executor = MovieExecutors.getsInstance();
         movieID = getIntent().getIntExtra(MainActivity.MOVIE_ID, 0);
+        mLiveDataVideoReviewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataVideoReviewModel.class);
 
-        movieDatabase = MovieDatabase.getInstance(getApplicationContext());
-        videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
+        executor.getDisk().execute(new Runnable() {
+            @Override
+            public void run() {
+                movieDatabase = MovieDatabase.getInstance(getApplicationContext());
+                videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
+            }
+        });
+        executor.getNetwork().execute(new Runnable() {
+            @Override
+            public void run() {
+                if(movieDatabase.movieDao().dataCheck().size() < 1) {
+                    RetrieveWebData retrieveWebData = new RetrieveWebData(null, videoReviewDatabase,
+                            getString(R.string.moviedb_api_key), getString(R.string.google_youtube_api_key), movieID, executor);
+                    retrieveWebData.getData();
+                }
+            }
+        });
+
+        setLiveData();
+        createRecycler(reviewList);
+        createRecycler(trailerList);
 
         populateUI();
-
-        if(videoReviewDatabase.detailsDao().dataCheck(movieID) == null) {
-            mLiveDataVideoReviewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataVideoReviewModel.class);
-            mLiveDataVideoReviewModel.getmVideoReviews().observe(this, new Observer<List<VideoReviewDetails>>() {
-                @Override
-                public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
-                    getRecyclerData();
-                }
-            });
-            movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
-            MovieExecutors.getsInstance().getNetwork().execute(new Runnable() {
-                @Override
-                public void run() {
-                    RetrieveWebData.getData(movieID, null, videoReviewDatabase, getString(R.string.moviedb_api_key), getString(R.string.google_youtube_api_key));
-                    finish();
-                }
-            });
-        }
-        getRecyclerData();
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
-    }
-
-    public void getRecyclerData(){
-        createRecycler(reviewList);
-        createRecycler(trailerList);
-
-        detailRecycler.setList(videoReviewDatabase.detailsDao().loadVideos(movieID));
-        detailRecycler.setList(videoReviewDatabase.detailsDao().loadReviews(movieID));
     }
 
     public void populateUI(){
@@ -118,9 +115,14 @@ public class DetailsActivity extends AppCompatActivity implements
     }
 
     public void addToFavorites(View v){
-        MovieDetails movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
-        movieDetails.setFavorite(true);
-        movieDatabase.movieDao().updateMovie(movieDetails);
+        MovieExecutors.getsInstance().getDisk().execute(new Runnable() {
+            @Override
+            public void run() {
+                MovieDetails movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
+                movieDetails.setFavorite(true);
+                movieDatabase.movieDao().updateMovie(movieDetails);
+            }
+        });
     }
     
     @Override
@@ -132,11 +134,40 @@ public class DetailsActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onTrailerClicked(int clickedPosition, View v) {
+    public void onTrailerClicked(final int clickedPosition, View v) {
         if(!v.getTag().toString().equals(TRAILER)){
-            Intent intent = YouTubeStandalonePlayer.createVideoIntent(this, getString(R.string.moviedb_api_key),
-                    videoReviewDatabase.detailsDao().loadVideos(movieID).get(clickedPosition).getVideoKey());
-            startActivity(intent);
+            final Activity activity = this;
+            MovieExecutors.getsInstance().getDisk().execute(new Runnable() {
+                @Override
+                public void run() {
+                    final String key = videoReviewDatabase.detailsDao().loadVideo(movieID).get(clickedPosition).getVideoKey();
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            Intent intent = YouTubeStandalonePlayer.createVideoIntent(activity , getString(R.string.moviedb_api_key), key);
+                            startActivity(intent);
+                        }
+                    });
+                }
+            });
         }
+    }
+
+    public void setLiveData(){
+        final Observer<List<VideoReviewDetails>> videoObserver = new Observer<List<VideoReviewDetails>>() {
+            @Override
+            public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
+                detailRecycler.setList(videoReviewDetails);
+            }
+        };
+        final Observer<List<VideoReviewDetails>> reviewObserver = new Observer<List<VideoReviewDetails>>() {
+            @Override
+            public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
+                detailRecycler.setList(videoReviewDetails);
+            }
+        };
+
+        mLiveDataVideoReviewModel.getVideos(movieID).observe(this, videoObserver);
+        mLiveDataVideoReviewModel.getReviews(movieID).observe(this, reviewObserver);
     }
 }

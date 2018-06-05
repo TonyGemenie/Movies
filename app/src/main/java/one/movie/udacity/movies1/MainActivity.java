@@ -17,6 +17,9 @@ import android.view.MenuItem;
 import android.view.View;
 
 import java.util.List;
+import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 import butterknife.BindView;
 import butterknife.ButterKnife;
@@ -39,6 +42,9 @@ public class MainActivity extends AppCompatActivity implements
     SharedPreferences sharedPreferences;
     private PosterRecycler posterRecycler;
     MovieDatabase movieDatabase;
+    boolean getData;
+    List<MovieDetails> dataCheck;
+    MovieExecutors executor;
 
     @BindView(R.id.poster_list) RecyclerView posterList;
 
@@ -52,31 +58,37 @@ public class MainActivity extends AppCompatActivity implements
         sharedPreferences.registerOnSharedPreferenceChangeListener(this);
 
         getWindow().setExitTransition(new Explode());
+        executor = MovieExecutors.getsInstance();
 
         mLiveDataMovieModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataMovieModel.class);
-
-        movieDatabase = MovieDatabase.getInstance(getApplicationContext());
-
-        if(movieDatabase.movieDao().dataCheck() == null) {
-            MovieExecutors.getsInstance().getNetwork().execute(new Runnable() {
-                @Override
-                public void run() {
-                    RetrieveWebData.getData(0, movieDatabase, null, getString(R.string.moviedb_api_key), null);
+        executor.getDisk().execute(new Runnable() {
+            @Override
+            public void run() {
+                movieDatabase = MovieDatabase.getInstance(getApplication());
+                if(movieDatabase.movieDao().dataCheck().size() < 1 ){
+                    getData = true;
                 }
-            });
+            }
+        });
+
+        if(getData) {
+            RetrieveWebData retrieveWebData = new RetrieveWebData(movieDatabase, null,
+                    getString(R.string.moviedb_api_key), null, 0, executor);
+            retrieveWebData.getData();
+            getData = false;
         }
+        setposterLiveData();
         createRecycler();
-        subscribe();
     }
 
-    private void subscribe() {
-        final Observer<List<MovieDetails>> movieObserver = new Observer<List<MovieDetails>>() {
+    public void setposterLiveData(){
+        Observer<List<MovieDetails>> posterObserver = new Observer<List<MovieDetails>>() {
             @Override
             public void onChanged(@Nullable List<MovieDetails> movieDetails) {
                 posterRecycler.setList(movieDetails);
             }
         };
-        mLiveDataMovieModel.getMovies().observe(this, movieObserver);
+        mLiveDataMovieModel.getMovies().observe(this, posterObserver);
     }
 
     public void createRecycler() {
@@ -89,34 +101,39 @@ public class MainActivity extends AppCompatActivity implements
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences s, String key) {
-        boolean popular = s.getBoolean(getString(R.string.popular_key), true);
-        boolean top_rated = s.getBoolean(getString(R.string.top_rated_key), true);
-        boolean favorite = s.getBoolean(getString(R.string.favorites_key), true);
-        if(popular && top_rated && favorite){
-            mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadAllMovies());
-            return;
-        }
-        if(popular && top_rated){
-            mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRatedPopular());
-            return;
-        }
-        if(popular && favorite){
-            mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadPopularFavorite());
-            return;
-        }
-        if(top_rated && favorite){
-            mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRatedFavorite());
-            return;
-        }
-        if(popular){
-            mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadPopular());
-        }
-        if(top_rated){
-            mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRated());
-        }
-        if(favorite){
-            mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadFavorites());
-        }
+        final boolean popular = s.getBoolean(getString(R.string.popular_key), true);
+        final boolean top_rated = s.getBoolean(getString(R.string.top_rated_key), true);
+        final boolean favorite = s.getBoolean(getString(R.string.favorites_key), true);
+        executor.getDisk().execute(new Runnable() {
+            @Override
+            public void run() {
+                if(popular && top_rated && favorite){
+                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadAllMovies());
+                    return;
+                }
+                if(popular && top_rated){
+                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRatedPopular());
+                    return;
+                }
+                if(popular && favorite){
+                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadPopularFavorite());
+                    return;
+                }
+                if(top_rated && favorite){
+                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRatedFavorite());
+                    return;
+                }
+                if(popular){
+                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadPopular());
+                }
+                if(top_rated){
+                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRated());
+                }
+                if(favorite){
+                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadFavorites());
+                }
+            }
+        });
     }
 
     @Override
