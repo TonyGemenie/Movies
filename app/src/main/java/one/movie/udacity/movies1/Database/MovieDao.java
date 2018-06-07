@@ -1,6 +1,6 @@
 package one.movie.udacity.movies1.Database;
 
-import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
 import android.arch.persistence.room.Dao;
 import android.arch.persistence.room.Delete;
 import android.arch.persistence.room.Insert;
@@ -14,8 +14,8 @@ import java.util.List;
 @Dao
 public interface MovieDao {
 
-    @Query("SELECT * FROM moviedatabase ORDER BY rating")
-    LiveData<List<MovieDetails>> loadAllMovies();
+    @Query("SELECT * FROM moviedatabase ORDER BY voteAverage")
+    List<MovieDetails> loadAllMovies();
 
     @Insert
     void insertMovie(MovieDetails movieEntry);
@@ -30,22 +30,22 @@ public interface MovieDao {
     MovieDetails loadMovieID(int id);
 
     @Query("SELECT * FROM moviedatabase WHERE favorite = 1")
-    LiveData<List<MovieDetails>> loadFavorites();
+    List<MovieDetails> loadFavorites();
 
     @Query("SELECT * FROM moviedatabase WHERE popular = 1")
-    LiveData<List<MovieDetails>> loadPopular();
+    List<MovieDetails> loadPopular();
 
     @Query("SELECT * FROM moviedatabase WHERE toprated = 1")
-    LiveData<List<MovieDetails>> loadTopRated();
+    List<MovieDetails> loadTopRated();
 
     @Query("SELECT * FROM moviedatabase WHERE toprated = 1 OR popular = 1" )
-    LiveData<List<MovieDetails>> loadTopRatedPopular();
+    List<MovieDetails> loadTopRatedPopular();
 
     @Query("SELECT * FROM moviedatabase WHERE toprated = 1 OR favorite = 1")
-    LiveData<List<MovieDetails>> loadTopRatedFavorite();
+    List<MovieDetails> loadTopRatedFavorite();
 
     @Query("SELECT * FROM moviedatabase WHERE popular = 1 OR favorite = 1")
-    LiveData<List<MovieDetails>> loadPopularFavorite();
+    List<MovieDetails> loadPopularFavorite();
 
     @Query("SELECT * FROM moviedatabase WHERE popular = 1 OR favorite = 1 OR toprated = 1")
     List<MovieDetails> dataCheck();

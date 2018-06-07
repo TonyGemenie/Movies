@@ -53,7 +53,7 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
         }
     }
 
-    public void setList(List<VideoReviewDetails> list){
+    public void setDetails(List<VideoReviewDetails> list){
         mList = list;
         notifyDataSetChanged();
     }

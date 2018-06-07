@@ -3,6 +3,7 @@ package one.movie.udacity.movies1.Database;
 import android.arch.persistence.room.Entity;
 import android.arch.persistence.room.PrimaryKey;
 
+
 @Entity(tableName = "moviedatabase")
 public class MovieDetails {
     boolean favorite;
@@ -11,15 +12,15 @@ public class MovieDetails {
     @PrimaryKey
     int id;
     int voteCount;
-    int popularity;
+    float popularity;
     String title;
-    String plot;
-    String rating;
-    String date;
+    String overview;
+    String voteAverage;
+    String releaseDate;
     String posterPath;
     String originalLanguage;
 
-    public MovieDetails(boolean favorite, boolean popular, boolean toprated, int id, int voteCount, int popularity, String title, String plot, String rating, String date, String posterPath, String originalLanguage) {
+    public MovieDetails(boolean favorite, boolean popular, boolean toprated, int id, int voteCount, float popularity, String title, String overview, String voteAverage, String releaseDate, String posterPath, String originalLanguage) {
         this.favorite = favorite;
         this.popular = popular;
         this.toprated = toprated;
@@ -27,9 +28,9 @@ public class MovieDetails {
         this.voteCount = voteCount;
         this.popularity = popularity;
         this.title = title;
-        this.plot = plot;
-        this.rating = rating;
-        this.date = date;
+        this.overview = overview;
+        this.voteAverage = voteAverage;
+        this.releaseDate = releaseDate;
         this.posterPath = posterPath;
         this.originalLanguage = originalLanguage;
     }
@@ -74,7 +75,7 @@ public class MovieDetails {
         this.voteCount = voteCount;
     }
 
-    public int getPopularity() {
+    public float getPopularity() {
         return popularity;
     }
 
@@ -91,27 +92,27 @@ public class MovieDetails {
     }
 
     public String getPlot() {
-        return plot;
+        return overview;
     }
 
     public void setPlot(String plot) {
-        this.plot = plot;
+        this.overview = plot;
     }
 
     public String getRating() {
-        return rating;
+        return voteAverage;
     }
 
     public void setRating(String rating) {
-        this.rating = rating;
+        this.voteAverage = rating;
     }
 
     public String getDate() {
-        return date;
+        return releaseDate;
     }
 
     public void setDate(String date) {
-        this.date = date;
+        this.releaseDate = date;
     }
 
     public String getPosterPath() {

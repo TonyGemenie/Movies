@@ -17,6 +17,7 @@ import butterknife.ButterKnife;
 import one.movie.udacity.movies1.Database.MovieDetails;
 import one.movie.udacity.movies1.MainActivity;
 import one.movie.udacity.movies1.R;
+import timber.log.Timber;
 
 
 public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH> {
@@ -46,6 +47,7 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
     }
 
     public void setList(List<MovieDetails> list){
+        Timber.i("PosterRecycler: setList:");
         mList = list;
         notifyDataSetChanged();
     }
@@ -55,7 +57,7 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
         if(mList == null){
             return 0;
         }
-        return mList.size() * 4;
+        return mList.size();
     }
 
     public interface vHClickListener{

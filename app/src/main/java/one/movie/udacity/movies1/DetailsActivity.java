@@ -3,7 +3,6 @@ package one.movie.udacity.movies1;
 import android.app.Activity;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
-import android.content.Context;
 import android.content.Intent;
 import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
@@ -21,7 +20,6 @@ import com.google.android.youtube.player.YouTubeStandalonePlayer;
 import com.squareup.picasso.Picasso;
 
 import java.util.List;
-import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
 
 import butterknife.BindView;
@@ -38,6 +36,7 @@ public class DetailsActivity extends AppCompatActivity implements
         DetailRecycler.onListClickListener{
 
     public static final String TRAILER = "size";
+    public static final String MOVIE_ID = "movie_id";
     @BindView(R.id.plot_text) TextView plotTX;
     @BindView(R.id.rating_text) TextView ratingTX;
     @BindView(R.id.date_text) TextView dateTX;
@@ -51,6 +50,7 @@ public class DetailsActivity extends AppCompatActivity implements
     VideoReviewDatabase videoReviewDatabase;
     MovieDetails movieDetails;
     DetailRecycler detailRecycler;
+
     private LiveDataVideoReviewModel mLiveDataVideoReviewModel;
     int movieID;
 
@@ -60,37 +60,38 @@ public class DetailsActivity extends AppCompatActivity implements
         setContentView(R.layout.activity_details);
 
         ButterKnife.bind(this);
-        final MovieExecutors executor = MovieExecutors.getsInstance();
         movieID = getIntent().getIntExtra(MainActivity.MOVIE_ID, 0);
         mLiveDataVideoReviewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataVideoReviewModel.class);
 
-        executor.getDisk().execute(new Runnable() {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
                 movieDatabase = MovieDatabase.getInstance(getApplicationContext());
                 videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
+                movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        populateUI();
+                    }
+                });
             }
         });
-        executor.getNetwork().execute(new Runnable() {
-            @Override
-            public void run() {
-                if(movieDatabase.movieDao().dataCheck().size() < 1) {
-                    RetrieveWebData retrieveWebData = new RetrieveWebData(null, videoReviewDatabase,
-                            getString(R.string.moviedb_api_key), getString(R.string.google_youtube_api_key), movieID, executor);
-                    retrieveWebData.getData();
-                }
-            }
-        });
-
+        startDetailService();
         setLiveData();
         createRecycler(reviewList);
         createRecycler(trailerList);
 
-        populateUI();
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
+    }
+
+    public void startDetailService(){
+        Intent intent = new Intent(DetailsActivity.this, RetrieveWebDataService.class);
+        intent.putExtra(MainActivity.KEY, getString(R.string.moviedb_api_key)).putExtra(MOVIE_ID, movieID);
+        startService(intent);
     }
 
     public void populateUI(){
@@ -115,7 +116,7 @@ public class DetailsActivity extends AppCompatActivity implements
     }
 
     public void addToFavorites(View v){
-        MovieExecutors.getsInstance().getDisk().execute(new Runnable() {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
                 MovieDetails movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
@@ -137,7 +138,7 @@ public class DetailsActivity extends AppCompatActivity implements
     public void onTrailerClicked(final int clickedPosition, View v) {
         if(!v.getTag().toString().equals(TRAILER)){
             final Activity activity = this;
-            MovieExecutors.getsInstance().getDisk().execute(new Runnable() {
+            Executors.newSingleThreadExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
                     final String key = videoReviewDatabase.detailsDao().loadVideo(movieID).get(clickedPosition).getVideoKey();
@@ -157,13 +158,13 @@ public class DetailsActivity extends AppCompatActivity implements
         final Observer<List<VideoReviewDetails>> videoObserver = new Observer<List<VideoReviewDetails>>() {
             @Override
             public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
-                detailRecycler.setList(videoReviewDetails);
+                detailRecycler.setDetails(videoReviewDetails);
             }
         };
         final Observer<List<VideoReviewDetails>> reviewObserver = new Observer<List<VideoReviewDetails>>() {
             @Override
             public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
-                detailRecycler.setList(videoReviewDetails);
+                detailRecycler.setDetails(videoReviewDetails);
             }
         };
 

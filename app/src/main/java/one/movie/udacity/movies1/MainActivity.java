@@ -1,5 +1,6 @@
 package one.movie.udacity.movies1;
 
+import android.arch.lifecycle.MediatorLiveData;
 import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
 import android.content.Intent;
@@ -12,13 +13,12 @@ import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.transition.Explode;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
 import java.util.List;
-import java.util.concurrent.Executor;
-import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 import butterknife.BindView;
@@ -26,6 +26,7 @@ import butterknife.ButterKnife;
 import one.movie.udacity.movies1.Adapter.PosterRecycler;
 import one.movie.udacity.movies1.Database.MovieDatabase;
 import one.movie.udacity.movies1.Database.MovieDetails;
+import timber.log.Timber;
 
 
 public class MainActivity extends AppCompatActivity implements
@@ -38,13 +39,14 @@ public class MainActivity extends AppCompatActivity implements
     public static final String MOVIE_DB_IMAGE_BASE = "http://image.tmdb.org/t/p/";
     public static final String SAVED_STRING = "saved_string";
     public static final String IMAGE_SIZE = "w185";
-    private LiveDataMovieModel mLiveDataMovieModel;
-    SharedPreferences sharedPreferences;
+    public static final String KEY = "key";
+    private static final String TAG = "tag";
+    private LiveDataPopularModel mLiveDataPopularModel;
+    private LiveDataTopRatedModel mLiveDataTopRatedModel;
+    private LiveDataFavoriteModel mLiveDataFavoriteModel;
+    SharedPreferences s;
     private PosterRecycler posterRecycler;
     MovieDatabase movieDatabase;
-    boolean getData;
-    List<MovieDetails> dataCheck;
-    MovieExecutors executor;
 
     @BindView(R.id.poster_list) RecyclerView posterList;
 
@@ -52,88 +54,97 @@ public class MainActivity extends AppCompatActivity implements
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Timber.plant(new Timber.DebugTree());
+        Timber.i("MainActivity: Start");
+
         ButterKnife.bind(this);
 
-        sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
-        sharedPreferences.registerOnSharedPreferenceChangeListener(this);
+        s = PreferenceManager.getDefaultSharedPreferences(this);
+        s.registerOnSharedPreferenceChangeListener(this);
 
         getWindow().setExitTransition(new Explode());
-        executor = MovieExecutors.getsInstance();
-
-        mLiveDataMovieModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataMovieModel.class);
-        executor.getDisk().execute(new Runnable() {
+        mLiveDataPopularModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataPopularModel.class);
+        mLiveDataTopRatedModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataTopRatedModel.class);
+        mLiveDataFavoriteModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataFavoriteModel.class);
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
                 movieDatabase = MovieDatabase.getInstance(getApplication());
-                if(movieDatabase.movieDao().dataCheck().size() < 1 ){
-                    getData = true;
-                }
+                mLiveDataPopularModel.getPopular().postValue(movieDatabase.movieDao().loadPopular());
+                mLiveDataTopRatedModel.getTopRated().postValue(movieDatabase.movieDao().loadTopRated());
+                mLiveDataFavoriteModel.getFavorites().postValue(movieDatabase.movieDao().loadFavorites());
+                createMediator();
             }
         });
-
-        if(getData) {
-            RetrieveWebData retrieveWebData = new RetrieveWebData(movieDatabase, null,
-                    getString(R.string.moviedb_api_key), null, 0, executor);
-            retrieveWebData.getData();
-            getData = false;
-        }
-        setposterLiveData();
+        startMovieService();
         createRecycler();
+        Timber.i("MainActivity: Stop");
     }
 
-    public void setposterLiveData(){
-        Observer<List<MovieDetails>> posterObserver = new Observer<List<MovieDetails>>() {
-            @Override
-            public void onChanged(@Nullable List<MovieDetails> movieDetails) {
-                posterRecycler.setList(movieDetails);
-            }
-        };
-        mLiveDataMovieModel.getMovies().observe(this, posterObserver);
-    }
 
     public void createRecycler() {
+        Timber.i("createRecycler: start");
         StaggeredGridLayoutManager staggeredGridLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         posterList.setLayoutManager(staggeredGridLayoutManager);
         posterRecycler = new PosterRecycler(this, this);
         posterList.setAdapter(posterRecycler);
-        posterList.scrollToPosition(sharedPreferences.getInt(POSITION, 0));
+        posterList.scrollToPosition(s.getInt(POSITION, 0));
+        Timber.i("createRecycler: stop");
+    }
+
+    public void startMovieService(){
+        Intent intent = new Intent(MainActivity.this, RetrieveWebDataService.class);
+        intent.putExtra(KEY, getString(R.string.moviedb_api_key)).putExtra(DetailsActivity.MOVIE_ID, 0);
+        startService(intent);
+    }
+
+    Observer<List<MovieDetails>> posterObserver = new Observer<List<MovieDetails>>() {
+        @Override
+        public void onChanged(@Nullable List<MovieDetails> movieDetails) {
+            Timber.i("posterObserver: Called");
+            posterRecycler.setList(movieDetails);
+        }
+    };
+
+    public void createMediator() {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                Timber.i("createMediator: Runnable: Start");
+                List<MovieDetails> list = null;
+                if (s.getBoolean(getString(R.string.popular_key), true)) {
+                    list = movieDatabase.movieDao().loadPopular();
+                }
+                if (s.getBoolean(getString(R.string.top_rated_key), true)) {
+                    List<MovieDetails> movies = movieDatabase.movieDao().loadTopRated();
+                    for (int i = 0; i < movies.size(); i++) {
+                        list.add(movies.get(i));
+                    }
+                }
+                if (s.getBoolean(getString(R.string.favorites_key), true)) {
+                    for (MovieDetails movie : movieDatabase.movieDao().loadFavorites()) {
+                        if (!list.contains(movie)) {
+                            list.add(movie);
+                        }
+                    }
+                }
+                final List<MovieDetails> slist = list;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(slist != null) {
+                            posterRecycler.setList(slist);
+                        }
+                    }
+                });
+                Timber.i("createMediator: Runnable: Stop");
+            }
+        });
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences s, String key) {
-        final boolean popular = s.getBoolean(getString(R.string.popular_key), true);
-        final boolean top_rated = s.getBoolean(getString(R.string.top_rated_key), true);
-        final boolean favorite = s.getBoolean(getString(R.string.favorites_key), true);
-        executor.getDisk().execute(new Runnable() {
-            @Override
-            public void run() {
-                if(popular && top_rated && favorite){
-                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadAllMovies());
-                    return;
-                }
-                if(popular && top_rated){
-                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRatedPopular());
-                    return;
-                }
-                if(popular && favorite){
-                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadPopularFavorite());
-                    return;
-                }
-                if(top_rated && favorite){
-                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRatedFavorite());
-                    return;
-                }
-                if(popular){
-                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadPopular());
-                }
-                if(top_rated){
-                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadTopRated());
-                }
-                if(favorite){
-                    mLiveDataMovieModel.setMovies(movieDatabase.movieDao().loadFavorites());
-                }
-            }
-        });
+        createMediator();
     }
 
     @Override
