@@ -7,14 +7,16 @@ import java.util.List;
 
 import one.movie.udacity.movies1.Database.MovieDetails;
 
-public class LiveDataFavoriteModel extends ViewModel{
+public class LiveDataMovieModel extends ViewModel {
 
     private MutableLiveData<List<MovieDetails>> mMovies;
 
-    public MutableLiveData<List<MovieDetails>> getFavorites() {
+
+    public MutableLiveData<List<MovieDetails>> getMovies() {
         if(mMovies == null){
             mMovies = new MutableLiveData<>();
         }
         return mMovies;
     }
+
 }

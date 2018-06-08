@@ -3,32 +3,25 @@ package one.movie.udacity.movies1;
 import android.app.Application;
 import android.arch.lifecycle.AndroidViewModel;
 import android.arch.lifecycle.LiveData;
+import android.arch.lifecycle.MutableLiveData;
+import android.arch.lifecycle.ViewModel;
 
 import java.util.List;
 
 import one.movie.udacity.movies1.Database.VideoReviewDatabase;
 import one.movie.udacity.movies1.Database.VideoReviewDetails;
 
-public class LiveDataVideoReviewModel extends AndroidViewModel {
+public class LiveDataVideoReviewModel extends ViewModel {
 
-        VideoReviewDatabase database;
-        private LiveData<List<VideoReviewDetails>> mVideoReviews;
 
-        public LiveDataVideoReviewModel(Application application) {
-            super(application);
-            database = VideoReviewDatabase.getInstance(this.getApplication());
-            mVideoReviews = database.detailsDao().loadAll();
+        private MutableLiveData<List<VideoReviewDetails>> mVideoReviews;
+
+
+        public MutableLiveData<List<VideoReviewDetails>> getVideoReviews(){
+            if(mVideoReviews == null){
+                mVideoReviews = new MutableLiveData<>();
+            }
+            return mVideoReviews;
         }
 
-        public LiveData<List<VideoReviewDetails>> getReviews(int id){
-            return database.detailsDao().loadReviews(id);
-        }
-
-        public LiveData<List<VideoReviewDetails>> getVideos(int id){
-            return database.detailsDao().loadVideos(id);
-        }
-
-        public List<VideoReviewDetails> getDataCheck(int id) {
-            return database.detailsDao().dataCheck(id);
-        }
 }

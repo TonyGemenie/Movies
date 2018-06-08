@@ -43,10 +43,11 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
     @Override
     public void onBindViewHolder(@NonNull DetailRecycler.TrailerReviewVH holder, int position) {
         VideoReviewDetails videoReviewDetails = mList.get(position);
-        if(videoReviewDetails.getVideoId() != null) {
+        if(videoReviewDetails.getType() != null) {
             holder.review.setVisibility(View.GONE);
             Picasso.with(mContext).load(videoReviewDetails.getImageURL()).into(holder.image);
-        }else {
+        }
+        if(videoReviewDetails.getAuthor() != null) {
             holder.image.setVisibility(View.GONE);
             holder.review.setText(videoReviewDetails.getContent());
             holder.review.setTag(DetailsActivity.TRAILER);
@@ -54,8 +55,10 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
     }
 
     public void setDetails(List<VideoReviewDetails> list){
-        mList = list;
-        notifyDataSetChanged();
+        if(list != null) {
+            mList = list;
+            notifyDataSetChanged();
+        }
     }
 
     @Override

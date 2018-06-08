@@ -6,7 +6,8 @@ import android.arch.persistence.room.PrimaryKey;
 @Entity(tableName = "detailsdatabase")
 public class VideoReviewDetails {
 
-    @PrimaryKey
+    @PrimaryKey(autoGenerate = true)
+    int identity;
     int movieID;
     String imageURL;
     String author;

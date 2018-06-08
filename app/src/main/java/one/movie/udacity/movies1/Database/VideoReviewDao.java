@@ -16,8 +16,11 @@ public interface VideoReviewDao {
     @Query("SELECT * FROM detailsdatabase ORDER BY movieID ")
     LiveData<List<VideoReviewDetails>> loadAll();
 
-    @Query("SELECT * FROM detailsdatabase WHERE author NOT null AND movieID = :id")
-    LiveData<List<VideoReviewDetails>> loadReviews(int id);
+    @Query("SELECT * FROM detailsdatabase WHERE movieID = :id")
+    List<VideoReviewDetails> loadVideoReviews(int id);
+
+   @Query("SELECT * FROM detailsdatabase WHERE author NOT null AND movieID = :id")
+    List<VideoReviewDetails> loadReview(int id);
 
     @Query("SELECT * FROM detailsdatabase WHERE movieID = :id")
     List<VideoReviewDetails> dataCheck(int id);
@@ -25,7 +28,7 @@ public interface VideoReviewDao {
     @Query("SELECT * FROM detailsdatabase WHERE type = 'Trailer'  AND movieID = :id")
     LiveData<List<VideoReviewDetails>> loadVideos(int id);
 
-   @Query("SELECT * FROM detailsdatabase WHERE type = 'Trailer'  AND movieID = :id")
+    @Query("SELECT * FROM detailsdatabase WHERE type = 'Trailer'  AND movieID = :id")
     List<VideoReviewDetails> loadVideo(int id);
 
 }

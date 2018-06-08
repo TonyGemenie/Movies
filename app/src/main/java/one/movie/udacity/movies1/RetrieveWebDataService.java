@@ -77,6 +77,8 @@ public class RetrieveWebDataService extends IntentService {
                                 }
                                 Timber.i("getData: Insert");
                                 movieDatabase.movieDao().insertMovie(movie);
+                                MovieDetails movieDetails = movieDatabase.movieDao().loadMovieID(movie.getId());
+                                boolean term = movieDetails.isToprated();
                             }
                             movieDatabase.setTransactionSuccessful();
                         }finally {
@@ -96,10 +98,10 @@ public class RetrieveWebDataService extends IntentService {
                         Response response = client.newCall(request).execute();
                         responseString = response.body().string();
                         JSONObject jsonObject = new JSONObject(responseString);
-                        String stringID = "\"movieID\":\"" + jsonObject.getString("id") + "\",";
                         JSONArray arr = jsonObject.getJSONArray("results");
                         Gson gson = new GsonBuilder().create();
                         for (int i = 0; i < arr.length(); i++) {
+                            String image = null;
                             if (arr.get(i).toString().contains("Trailer")) {
                                 String imageUrl = IMAGE_BASE + arr.getJSONObject(i).getString("id") + "&key=" +
                                         getResources().getString(R.string.google_youtube_api_key) + IMAGE_END;
@@ -111,10 +113,13 @@ public class RetrieveWebDataService extends IntentService {
                                 responseString = imageResponse.body().string();
                                 JSONObject obj = new JSONObject(responseString);
                                 JSONArray imageArr = obj.getJSONArray("items");
-                                String image = imageArr.getJSONObject(0).getJSONObject("thumbnails").getJSONObject("medium").getString("url");
-                                stringID = stringID + "\"imageURL\":\"" + image + "\",";
+                                image = imageArr.getJSONObject(0).getJSONObject("thumbnails").getJSONObject("medium").getString("url");
                             }
-                            VideoReviewDetails videoReviewDetail = gson.fromJson(stringID + arr.get(i).toString(), VideoReviewDetails.class);
+                            VideoReviewDetails videoReviewDetail = gson.fromJson(arr.get(i).toString(), VideoReviewDetails.class);
+                            if(image != null) {
+                                videoReviewDetail.setImageURL(image);
+                            }
+                            videoReviewDetail.setId(id);
                             VideoReviewDatabase.getInstance(getApplicationContext()).detailsDao().insertVideoReview(videoReviewDetail);
                         }
                     }

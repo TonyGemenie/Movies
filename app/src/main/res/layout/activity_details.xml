@@ -9,7 +9,7 @@
 
     <android.support.constraint.ConstraintLayout
         android:layout_width="match_parent"
-        android:layout_height="match_parent">
+        android:layout_height="wrap_content">
 
         <TextView
             android:id="@+id/movie_title"
@@ -32,7 +32,7 @@
             android:transitionName="poster"
             app:layout_constraintBottom_toTopOf="@+id/plot_text"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintHorizontal_bias="0.1"
+            app:layout_constraintHorizontal_bias="0.3"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/movie_title" />
 
@@ -80,7 +80,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="8dp"
-            android:background="@android:drawable/btn_star_big_on"
+            android:background="@drawable/favorites"
             android:onClick="addToFavorites"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/date_text"
@@ -91,7 +91,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@style/margins"
-            android:text="Trailers"
+            android:text="@string/trailer_string"
             app:layout_constraintEnd_toStartOf="@+id/date_text"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/plot_text" />
@@ -110,9 +110,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             style="@style/margins"
-            android:text="Reviews"
-            android:clickable="true"
-            android:onClick="getReviews"
+            android:text="@string/review_string"
             app:layout_constraintEnd_toStartOf="@+id/date_text"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/trailer_list"/>

@@ -30,6 +30,7 @@ import one.movie.udacity.movies1.Database.MovieDatabase;
 import one.movie.udacity.movies1.Database.VideoReviewDatabase;
 import one.movie.udacity.movies1.Database.MovieDetails;
 import one.movie.udacity.movies1.Database.VideoReviewDetails;
+import timber.log.Timber;
 
 
 public class DetailsActivity extends AppCompatActivity implements
@@ -49,7 +50,8 @@ public class DetailsActivity extends AppCompatActivity implements
     MovieDatabase movieDatabase;
     VideoReviewDatabase videoReviewDatabase;
     MovieDetails movieDetails;
-    DetailRecycler detailRecycler;
+    DetailRecycler reviewDetailRecycler;
+    DetailRecycler trailerDetailRecycler;
 
     private LiveDataVideoReviewModel mLiveDataVideoReviewModel;
     int movieID;
@@ -67,21 +69,18 @@ public class DetailsActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 movieDatabase = MovieDatabase.getInstance(getApplicationContext());
-                videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
                 movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        populateUI();
-                    }
-                });
+                videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
+                mLiveDataVideoReviewModel.getVideoReviews().setValue(videoReviewDatabase.detailsDao().loadVideoReviews(movieID));
             }
         });
+        populateUI();
+        reviewDetailRecycler = new DetailRecycler(this, this);
+        trailerDetailRecycler = new DetailRecycler(this, this);
         startDetailService();
+        createRecycler(reviewList, reviewDetailRecycler);
+        createRecycler(trailerList, trailerDetailRecycler);
         setLiveData();
-        createRecycler(reviewList);
-        createRecycler(trailerList);
-
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -107,12 +106,12 @@ public class DetailsActivity extends AppCompatActivity implements
         movieTitle.setText(movieDetails.getTitle());
     }
 
-    public void createRecycler(RecyclerView recyclerView){
+    public void createRecycler(RecyclerView recyclerView, DetailRecycler adapter){
+        Timber.i("START");
         RecyclerView.LayoutManager layoutManager = new LinearLayoutManager(this);
         recyclerView.setLayoutManager(layoutManager);
-
-        DetailRecycler detailRecycler = new DetailRecycler(this, this);
-        recyclerView.setAdapter(detailRecycler);
+        recyclerView.setAdapter(adapter);
+        Timber.i("STOP");
     }
 
     public void addToFavorites(View v){
@@ -120,7 +119,11 @@ public class DetailsActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 MovieDetails movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
-                movieDetails.setFavorite(true);
+                if(movieDetails.isFavorite()){
+                    movieDetails.setFavorite(false);
+                }else {
+                    movieDetails.setFavorite(true);
+                }
                 movieDatabase.movieDao().updateMovie(movieDetails);
             }
         });
@@ -158,17 +161,17 @@ public class DetailsActivity extends AppCompatActivity implements
         final Observer<List<VideoReviewDetails>> videoObserver = new Observer<List<VideoReviewDetails>>() {
             @Override
             public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
-                detailRecycler.setDetails(videoReviewDetails);
+                trailerDetailRecycler.setDetails(videoReviewDetails);
             }
         };
         final Observer<List<VideoReviewDetails>> reviewObserver = new Observer<List<VideoReviewDetails>>() {
             @Override
             public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
-                detailRecycler.setDetails(videoReviewDetails);
+                reviewDetailRecycler.setDetails(videoReviewDetails);
             }
         };
 
-        mLiveDataVideoReviewModel.getVideos(movieID).observe(this, videoObserver);
-        mLiveDataVideoReviewModel.getReviews(movieID).observe(this, reviewObserver);
+        mLiveDataVideoReviewModel.getVideoReviews().observe(this, videoObserver);
+        mLiveDataVideoReviewModel.getVideoReviews().observe(this, reviewObserver);
     }
 }
