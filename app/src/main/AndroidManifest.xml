@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="one.movie.udacity.movies1">
 
     <uses-permission android:name="android.permission.INTERNET"></uses-permission>
@@ -33,6 +34,7 @@
                 android:value="one.movie.udacity.movies1.MainActivity"/>
         </activity>
         <service android:name=".RetrieveWebDataService"/>
+        <receiver android:name=".MainActivity$DownloadMovieReciever" android:exported="false"/>
     </application>
 
 </manifest>

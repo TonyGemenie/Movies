@@ -3,6 +3,8 @@ package one.movie.udacity.movies1;
 import android.app.IntentService;
 import android.content.Intent;
 import android.support.annotation.Nullable;
+import android.support.v4.content.LocalBroadcastManager;
+import android.widget.ArrayAdapter;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -12,6 +14,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.util.ArrayList;
+import java.util.List;
 
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -40,20 +43,44 @@ public class RetrieveWebDataService extends IntentService {
     @Override
     protected void onHandleIntent(@Nullable Intent intent) {
         if(intent.hasExtra(MainActivity.KEY)) {
-            getData(intent.getStringExtra(MainActivity.KEY), intent.getIntExtra(DetailsActivity.MOVIE_ID, 0));
+            getData(intent.getStringExtra(MainActivity.KEY), intent.getIntExtra(DetailsActivity.MOVIE_ID, 0), intent.getIntExtra(MainActivity.SEARCH_ID, 0));
         }
     }
 
-    public void getData(String key, int id) {
+    public void getData(String key, int id, int searchId) {
         Timber.i("getData: Start");
         OkHttpClient client = new OkHttpClient();
+
+        //UnNecessary Code Added {Android Architecture Components Learning Protocol}
+        ArrayList<Integer> movieId = new ArrayList<>();
+        ArrayList<String> poster = new ArrayList<>();
+
         String responseString;
         try {
             if (id == 0) {
                 MovieDatabase movieDatabase = MovieDatabase.getInstance(getApplication());
-                if (movieDatabase.movieDao().dataCheck().size() < 1) {
-                    for (int j = 0; j < 2; j++) {
-                        String url = MOVIE_DB_BASE + searchTerms[j] + API_KEY + key;
+                if (movieDatabase.movieDao().dataCheck().size() < 21) {
+
+                    //UnNecessary Code Added {Android Architecture Components Learning Protocol}
+                    int termSize;
+                    if(searchId != 4000 || searchId != 3000) {
+                        termSize = 2;
+                    }else {
+                        termSize = 1;
+                    }
+                    for (int j = 0; j < termSize; j++) {
+                        String[] strings;
+                        if(searchId == 3000){
+                            strings = new String[]{"popular"};
+                        }
+                        else if(searchId == 4000){
+                            strings = new String[]{"top_rated"};
+                        }else {
+                            strings = searchTerms;
+                        }
+
+                        Timber.i("Build URL");
+                        String url = MOVIE_DB_BASE + strings[j] + API_KEY + key;
                         Request request = new Request.Builder()
                                 .url(url)
                                 .get()
@@ -67,7 +94,12 @@ public class RetrieveWebDataService extends IntentService {
                                 .create();
                         int arrSize = arr.length();
                         movieDatabase.beginTransaction();
+
+
+
+                        //UnNecessary Code Added {Android Architecture Components Learning Protocol}
                         try {
+                            Timber.i("TRY");
                             for (int i = 0; i < arrSize; i++) {
                                 MovieDetails movie = (gson.fromJson(arr.get(i).toString(), MovieDetails.class));
                                 if(j == 0) {
@@ -75,10 +107,16 @@ public class RetrieveWebDataService extends IntentService {
                                 }else {
                                     movie.setToprated(true);
                                 }
+                                poster.add(movie.getPosterPath());
+                                movieId.add(movie.getId());
+
+                                //This Timber log appears Before Timber("Build URL") in LogCat
                                 Timber.i("getData: Insert");
-                                movieDatabase.movieDao().insertMovie(movie);
+
+
+                                /*movieDatabase.movieDao().insertMovie(movie);
                                 MovieDetails movieDetails = movieDatabase.movieDao().loadMovieID(movie.getId());
-                                boolean term = movieDetails.isToprated();
+                                boolean term = movieDetails.isToprated();*/
                             }
                             movieDatabase.setTransactionSuccessful();
                         }finally {
@@ -87,6 +125,8 @@ public class RetrieveWebDataService extends IntentService {
                     }
                 }
             }
+
+
             else {
                 if(VideoReviewDatabase.getInstance(getApplication()).detailsDao().dataCheck(id).size() < 1) {
                     for (String term : detailTerms) {
@@ -128,7 +168,14 @@ public class RetrieveWebDataService extends IntentService {
         } catch (Exception e) {
             e.printStackTrace();
         }
+        deliverResults(poster, movieId);
         Timber.i("getData: Stop");
+    }
+
+    //UnNecessary Code Added {Android Architecture Components Learning Protocol}
+    public void deliverResults(ArrayList<String> poster, ArrayList<Integer> movieId){
+        Intent intent = new Intent(MainActivity.BROADCAST_ACTION).putStringArrayListExtra(MainActivity.KEY, poster).putIntegerArrayListExtra(MainActivity.IMAGE_SIZE, movieId);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(intent);
     }
 }
 

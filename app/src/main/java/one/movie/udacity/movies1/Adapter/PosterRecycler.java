@@ -10,6 +10,7 @@ import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
@@ -22,7 +23,7 @@ import timber.log.Timber;
 
 public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH> {
 
-    public List<MovieDetails> mList;
+    public ArrayList<String> mList;
     public vHClickListener mVHClickListener;
     public Context mContext;
 
@@ -41,12 +42,11 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
 
     @Override
     public void onBindViewHolder(@NonNull PosterRecycler.PosterVH holder, int position) {
-        MovieDetails movieDetails =  mList.get(position % mList.size());
-        String imageUri = MainActivity.MOVIE_DB_IMAGE_BASE + MainActivity.IMAGE_SIZE + movieDetails.getPosterPath();
+        String imageUri = MainActivity.MOVIE_DB_IMAGE_BASE + MainActivity.IMAGE_SIZE + mList.get(position);
         Picasso.with(mContext).load(imageUri).into(holder.posterImage);
     }
 
-    public void setList(List<MovieDetails> list){
+    public void setList(ArrayList<String> list){
         Timber.i("PosterRecycler: setList:");
         mList = list;
         notifyDataSetChanged();
@@ -76,8 +76,7 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
 
         @Override
         public void onClick(View v) {
-            int id = mList.get(getAdapterPosition()).getId();
-            mVHClickListener.onPosterClicked(id, posterImage);
+            mVHClickListener.onPosterClicked(getAdapterPosition(), posterImage);
         }
     }
 }

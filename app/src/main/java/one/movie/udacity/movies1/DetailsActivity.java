@@ -65,7 +65,7 @@ public class DetailsActivity extends AppCompatActivity implements
         movieID = getIntent().getIntExtra(MainActivity.MOVIE_ID, 0);
         mLiveDataVideoReviewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataVideoReviewModel.class);
 
-        Executors.newSingleThreadExecutor().execute(new Runnable() {
+        Executors.newFixedThreadPool(1).execute(new Runnable() {
             @Override
             public void run() {
                 movieDatabase = MovieDatabase.getInstance(getApplicationContext());
@@ -73,14 +73,16 @@ public class DetailsActivity extends AppCompatActivity implements
                 videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
                 mLiveDataVideoReviewModel.getVideoReviews().setValue(videoReviewDatabase.detailsDao().loadVideoReviews(movieID));
             }
+
         });
-        populateUI();
+
         reviewDetailRecycler = new DetailRecycler(this, this);
         trailerDetailRecycler = new DetailRecycler(this, this);
         startDetailService();
         createRecycler(reviewList, reviewDetailRecycler);
         createRecycler(trailerList, trailerDetailRecycler);
         setLiveData();
+        populateUI();
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null) {
             actionBar.setDisplayHomeAsUpEnabled(true);
@@ -94,16 +96,21 @@ public class DetailsActivity extends AppCompatActivity implements
     }
 
     public void populateUI(){
-        Picasso.with(imageView.getContext())
-                .load(movieDetails.getPosterPath())
-                .noFade()
-                .noPlaceholder()
-                .into(imageView);
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                Picasso.with(imageView.getContext())
+                        .load(movieDetails.getPosterPath())
+                        .noFade()
+                        .noPlaceholder()
+                        .into(imageView);
 
-        plotTX.setText(movieDetails.getPlot());
-        ratingTX.setText(movieDetails.getRating());
-        dateTX.setText(movieDetails.getDate());
-        movieTitle.setText(movieDetails.getTitle());
+                plotTX.setText(movieDetails.getPlot());
+                ratingTX.setText(movieDetails.getRating());
+                dateTX.setText(movieDetails.getDate());
+                movieTitle.setText(movieDetails.getTitle());
+            }
+        });
     }
 
     public void createRecycler(RecyclerView recyclerView, DetailRecycler adapter){
