@@ -23,7 +23,7 @@ import timber.log.Timber;
 
 public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH> {
 
-    public ArrayList<String> mList;
+    public List<MovieDetails> mList;
     public vHClickListener mVHClickListener;
     public Context mContext;
 
@@ -42,11 +42,12 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
 
     @Override
     public void onBindViewHolder(@NonNull PosterRecycler.PosterVH holder, int position) {
-        String imageUri = MainActivity.MOVIE_DB_IMAGE_BASE + MainActivity.IMAGE_SIZE + mList.get(position);
+        MovieDetails movieDetails = mList.get(position);
+        String imageUri = MainActivity.MOVIE_DB_IMAGE_BASE + MainActivity.IMAGE_SIZE + movieDetails.getPosterPath();
         Picasso.with(mContext).load(imageUri).into(holder.posterImage);
     }
 
-    public void setList(ArrayList<String> list){
+    public void setList(List<MovieDetails> list){
         Timber.i("PosterRecycler: setList:");
         mList = list;
         notifyDataSetChanged();
@@ -61,7 +62,7 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
     }
 
     public interface vHClickListener{
-        void onPosterClicked(int clickedPosition, View v);
+        void onPosterClicked(int Id, View v);
     }
 
     class PosterVH extends RecyclerView.ViewHolder implements View.OnClickListener {
@@ -76,7 +77,7 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
 
         @Override
         public void onClick(View v) {
-            mVHClickListener.onPosterClicked(getAdapterPosition(), posterImage);
+            mVHClickListener.onPosterClicked(mList.get(getAdapterPosition()).getId(), posterImage);
         }
     }
 }

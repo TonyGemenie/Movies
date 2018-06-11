@@ -44,14 +44,9 @@ public class MainActivity extends AppCompatActivity implements
     public static final String SAVED_STRING = "saved_string";
     public static final String IMAGE_SIZE = "w185";
     public static final String KEY = "key";
-    public static final String SEARCH_ID = "search_id";
-    public static final String BROADCAST_ACTION = "broadcast_action";
     private LiveDataMovieModel mLiveDataMovieModel;
-    int searchId;
     SharedPreferences s;
     private PosterRecycler posterRecycler;
-    private ArrayList<Integer> movieId = new ArrayList<>();
-    private ArrayList<String> moviePosterPath = new ArrayList<>();
 
     @BindView(R.id.poster_list) RecyclerView posterList;
 
@@ -67,16 +62,9 @@ public class MainActivity extends AppCompatActivity implements
         s = PreferenceManager.getDefaultSharedPreferences(this);
         s.registerOnSharedPreferenceChangeListener(this);
 
-        //UnNecessary Code Added {Android Architecture Components Learning Protocol}
-        DownloadMovieReciever downloadStockReciever = new DownloadMovieReciever();
-        IntentFilter intentFilter = new IntentFilter(BROADCAST_ACTION);
-        LocalBroadcastManager.getInstance(this).registerReceiver(downloadStockReciever, intentFilter);
-        setSearchId();
-
-        //Android Arch Components {Will Work Code}
-        /*mLiveDataMovieModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataMovieModel.class);
+        mLiveDataMovieModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataMovieModel.class);
         mLiveDataMovieModel.getMovies().observe(this, posterObserver);
-        setPosterList();*/
+        setPosterList();
 
         startMovieService();
         createRecycler();
@@ -96,47 +84,19 @@ public class MainActivity extends AppCompatActivity implements
 
     public void startMovieService(){
         Intent intent = new Intent(MainActivity.this, RetrieveWebDataService.class);
-        intent.putExtra(KEY, getString(R.string.moviedb_api_key)).putExtra(DetailsActivity.MOVIE_ID, 0).putExtra(SEARCH_ID, searchId);
+        intent.putExtra(KEY, getString(R.string.moviedb_api_key)).putExtra(DetailsActivity.MOVIE_ID, 0);
         startService(intent);
     }
 
-    //Android Arch Components {Will Work Code}
-    /*Observer<List<MovieDetails>> posterObserver = new Observer<List<MovieDetails>>() {
+
+    Observer<List<MovieDetails>> posterObserver = new Observer<List<MovieDetails>>() {
         @Override
         public void onChanged(@Nullable List<MovieDetails> movieDetails) {
             Timber.i("posterObserver: Called");
             posterRecycler.setList(movieDetails);
         }
-    };*/
+    };
 
-    //UnNecessary Code Added {Android Architecture Components Learning Protocol}
-    public void setSearchId(){
-        if(s.getBoolean(getString(R.string.popular_key), true) && s.getBoolean(getString(R.string.top_rated_key), true)
-        && s.getBoolean(getString(R.string.favorites_key), true)){
-            searchId = 1000;
-        }
-        if(s.getBoolean(getString(R.string.popular_key), true) && s.getBoolean(getString(R.string.top_rated_key), true)) {
-            searchId = 2000;
-        }
-        if(s.getBoolean(getString(R.string.popular_key), true)) {
-            searchId = 3000;
-        }
-        if(s.getBoolean(getString(R.string.top_rated_key), true)) {
-            searchId = 4000;
-        }
-        if(s.getBoolean(getString(R.string.popular_key), true) && s.getBoolean(getString(R.string.favorites_key), true)) {
-            searchId = 5000;
-        }
-        if(s.getBoolean(getString(R.string.top_rated_key), true) && s.getBoolean(getString(R.string.favorites_key), true)) {
-            searchId = 6000;
-        }
-        if(s.getBoolean(getString(R.string.favorites_key), true)) {
-            searchId = 7000;
-        }
-    }
-
-
-    //Android Arch Components {Will Work Code}
     public void setPosterList(){
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
@@ -164,13 +124,11 @@ public class MainActivity extends AppCompatActivity implements
             Timber.i("createMediator: Runnable: Stop");
             }
         });
-
     }
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences s, String key) {
-        setSearchId();
-        startMovieService();
+        setPosterList();
     }
 
     @Override
@@ -194,20 +152,8 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     public void onPosterClicked(int id, View v) {
         Intent intent = new Intent(this, DetailsActivity.class);
-        intent.putExtra(MOVIE_ID, movieId.get(id));
+        intent.putExtra(MOVIE_ID, id);
         ActivityOptionsCompat options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, v, "poster");
         startActivity(intent, options.toBundle());
-    }
-
-    //UnNecessary Code Added {Android Architecture Components Learning Protocol}
-    public class DownloadMovieReciever extends BroadcastReceiver{
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            moviePosterPath = getIntent().getStringArrayListExtra(KEY);
-            movieId = getIntent().getIntegerArrayListExtra(IMAGE_SIZE);
-
-            posterRecycler.setList(moviePosterPath);
-        }
     }
 }

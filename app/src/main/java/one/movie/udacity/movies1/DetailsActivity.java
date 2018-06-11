@@ -71,7 +71,7 @@ public class DetailsActivity extends AppCompatActivity implements
                 movieDatabase = MovieDatabase.getInstance(getApplicationContext());
                 movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
                 videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
-                mLiveDataVideoReviewModel.getVideoReviews().setValue(videoReviewDatabase.detailsDao().loadVideoReviews(movieID));
+                mLiveDataVideoReviewModel.getVideoReviews().setValue(videoReviewDatabase.detailsDao().loadReview(movieID));
             }
 
         });

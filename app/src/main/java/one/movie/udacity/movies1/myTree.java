@@ -19,11 +19,6 @@ public class myTree extends Timber.DebugTree {
     }
 
     public String getMethodName(StackTraceElement[] elements) {
-        /*String returnString = null;
-        for(StackTraceElement element: elements){
-            returnString += element;
-        }
-        Log.i("TAG", "getMethodName: " + returnString);*/
         return elements[8].toString();
     }
 
