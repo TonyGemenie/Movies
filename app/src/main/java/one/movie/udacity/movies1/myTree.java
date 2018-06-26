@@ -12,13 +12,13 @@ public class myTree extends Timber.DebugTree {
         return getMethodName(element);
     }
 
-    public StackTraceElement[] newStackTraceElement() {
-        StackTraceElement [] elements = new Throwable()
-                .getStackTrace();
-        return elements;
+
+    private StackTraceElement[] newStackTraceElement() {
+        return new Throwable().getStackTrace();
     }
 
-    public String getMethodName(StackTraceElement[] elements) {
+
+    private String getMethodName(StackTraceElement[] elements) {
         return elements[8].toString();
     }
 

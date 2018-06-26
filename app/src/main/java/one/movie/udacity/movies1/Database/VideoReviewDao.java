@@ -13,7 +13,7 @@ public interface VideoReviewDao {
     @Insert
     void insertVideoReview(VideoReviewDetails movieEntry);
 
-   @Query("SELECT * FROM detailsdatabase WHERE author NOT null AND movieID = :id")
+    @Query("SELECT * FROM detailsdatabase WHERE author NOT null AND movieID = :id")
     List<VideoReviewDetails> loadReview(int id);
 
     @Query("SELECT * FROM detailsdatabase WHERE movieID = :id")

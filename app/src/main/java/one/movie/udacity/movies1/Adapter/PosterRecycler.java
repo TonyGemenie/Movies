@@ -23,9 +23,9 @@ import timber.log.Timber;
 
 public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH> {
 
-    public List<MovieDetails> mList;
-    public vHClickListener mVHClickListener;
-    public Context mContext;
+    private List<MovieDetails> mList;
+    private vHClickListener mVHClickListener;
+    private Context mContext;
 
     public PosterRecycler(vHClickListener listener, Context context) {
         mVHClickListener = listener;
@@ -36,8 +36,7 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
     @Override
     public PosterRecycler.PosterVH onCreateViewHolder(@NonNull ViewGroup parent, int viewType) {
         View view = LayoutInflater.from(parent.getContext()).inflate(R.layout.poster_view, parent, false);
-        PosterVH viewHolder = new PosterVH(view);
-        return viewHolder;
+        return new PosterVH(view);
     }
 
     @Override
@@ -48,7 +47,6 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
     }
 
     public void setList(List<MovieDetails> list){
-        Timber.i("PosterRecycler: setList:");
         mList = list;
         notifyDataSetChanged();
     }

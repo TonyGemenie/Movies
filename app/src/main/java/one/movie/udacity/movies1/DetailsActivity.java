@@ -13,6 +13,7 @@ import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 
@@ -45,6 +46,7 @@ public class DetailsActivity extends AppCompatActivity implements
     @BindView(R.id.trailer_list) RecyclerView trailerList;
     @BindView(R.id.review_list) RecyclerView reviewList;
     @BindView(R.id.movie_title) TextView movieTitle;
+    @BindView(R.id.favorite_button) Button favoriteButton;
     @BindViews({R.id.plot_text, R.id.rating_text, R.id.date_text})List<TextView> textViews;
 
     MovieDatabase movieDatabase;
@@ -72,6 +74,14 @@ public class DetailsActivity extends AppCompatActivity implements
                 movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
                 videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
                 mLiveDataVideoReviewModel.getVideoReviews().setValue(videoReviewDatabase.detailsDao().loadReview(movieID));
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        if(movieDetails.isFavorite()){
+                            favoriteButton.setActivated(true);
+                        }
+                    }
+                });
             }
 
         });
@@ -90,7 +100,7 @@ public class DetailsActivity extends AppCompatActivity implements
     }
 
     public void startDetailService(){
-        Intent intent = new Intent(DetailsActivity.this, RetrieveWebDataService.class);
+        Intent intent = new Intent(DetailsActivity.this, GetWebData.class);
         intent.putExtra(MainActivity.KEY, getString(R.string.moviedb_api_key)).putExtra(MOVIE_ID, movieID);
         startService(intent);
     }
