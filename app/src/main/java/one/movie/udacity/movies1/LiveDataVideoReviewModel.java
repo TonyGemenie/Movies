@@ -13,9 +13,7 @@ import one.movie.udacity.movies1.Database.VideoReviewDetails;
 
 public class LiveDataVideoReviewModel extends ViewModel {
 
-
         private MutableLiveData<List<VideoReviewDetails>> mVideoReviews;
-
 
         public MutableLiveData<List<VideoReviewDetails>> getVideoReviews(){
             if(mVideoReviews == null){
@@ -23,5 +21,4 @@ public class LiveDataVideoReviewModel extends ViewModel {
             }
             return mVideoReviews;
         }
-
 }

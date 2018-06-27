@@ -46,11 +46,12 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
         if(videoReviewDetails.getType() != null) {
             holder.review.setVisibility(View.GONE);
             Picasso.with(mContext).load(videoReviewDetails.getImageURL()).into(holder.image);
+            holder.review.setTag(DetailsActivity.TRAILER);
         }
         if(videoReviewDetails.getAuthor() != null) {
             holder.image.setVisibility(View.GONE);
-            holder.review.setText(videoReviewDetails.getContent());
-            holder.review.setTag(DetailsActivity.TRAILER);
+            String review = videoReviewDetails.getContent() + "/n" + videoReviewDetails.getAuthor();
+            holder.review.setText(review);
         }
     }
 

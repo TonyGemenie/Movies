@@ -4,6 +4,7 @@ import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Movie;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -15,6 +16,7 @@ import android.transition.Explode;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Toast;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -41,7 +43,6 @@ public class MainActivity extends AppCompatActivity implements
     private LiveDataMovieModel mLiveDataMovieModel;
     SharedPreferences s;
     private PosterRecycler posterRecycler;
-    GetWebData getWebData;
     MovieDatabase movieDatabase;
 
     @BindView(R.id.poster_list) RecyclerView posterList;
@@ -57,30 +58,18 @@ public class MainActivity extends AppCompatActivity implements
 
         s = PreferenceManager.getDefaultSharedPreferences(this);
         s.registerOnSharedPreferenceChangeListener(this);
-        getWebData = new GetWebData(this);
 
         mLiveDataMovieModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataMovieModel.class);
         mLiveDataMovieModel.getMovies().observe(this, posterObserver);
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                getWebData.getMovieDetails(getString(R.string.popular_key), getString(R.string.moviedb_api_key));
-                getWebData.getMovieDetails(getString(R.string.top_rated_key), getString(R.string.moviedb_api_key));
-                movieDatabase = MovieDatabase.getInstance(getApplication());
-
-                //MovieDao only returning 20 items
-                final List<MovieDetails> list = movieDatabase.movieDao().dataCheck();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mLiveDataMovieModel.getMovies().setValue(list);
-                    }
-                });
+                GetWebData getWebData = new GetWebData(getApplication());
+                mLiveDataMovieModel.getMovies().setValue(getWebData.getMovieDetails(getString(R.string.moviedb_api_key)));
             }
         });
 
         setPosterList();
-
         createRecycler();
         getWindow().setExitTransition(new Explode());
         Timber.i("MainActivity: Stop");
@@ -111,11 +100,11 @@ public class MainActivity extends AppCompatActivity implements
             Timber.i("createMediator: Runnable: Start");
             MovieDatabase movieDatabase = MovieDatabase.getInstance(getApplication());
             final List<MovieDetails> list = movieDatabase.movieDao().loadFavorites();
-            if (s.getBoolean(getString(R.string.popular_key), true) && movieDatabase.movieDao().loadPopular().size() > 0) {
+            list.clear();
+            if (s.getBoolean(getString(R.string.popular_key), true)) {
                 list.addAll(movieDatabase.movieDao().loadPopular());
             }
-            if (s.getBoolean(getString(R.string.top_rated_key), true) && movieDatabase.movieDao().loadTopRated().size() > 0) {
-                MovieDetails movie = movieDatabase.movieDao().loadMovieID(268);
+            if (s.getBoolean(getString(R.string.top_rated_key), true)) {
                 list.addAll(movieDatabase.movieDao().loadTopRated());
             }
             if (s.getBoolean(getString(R.string.favorites_key), true) && movieDatabase.movieDao().loadFavorites().size() > 0) {

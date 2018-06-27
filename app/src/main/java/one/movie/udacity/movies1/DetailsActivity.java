@@ -37,8 +37,7 @@ import timber.log.Timber;
 public class DetailsActivity extends AppCompatActivity implements
         DetailRecycler.onListClickListener{
 
-    public static final String TRAILER = "size";
-    public static final String MOVIE_ID = "movie_id";
+    public static final String TRAILER = "trailer";
     @BindView(R.id.plot_text) TextView plotTX;
     @BindView(R.id.rating_text) TextView ratingTX;
     @BindView(R.id.date_text) TextView dateTX;
@@ -49,14 +48,14 @@ public class DetailsActivity extends AppCompatActivity implements
     @BindView(R.id.favorite_button) Button favoriteButton;
     @BindViews({R.id.plot_text, R.id.rating_text, R.id.date_text})List<TextView> textViews;
 
-    MovieDatabase movieDatabase;
-    VideoReviewDatabase videoReviewDatabase;
-    MovieDetails movieDetails;
-    DetailRecycler reviewDetailRecycler;
-    DetailRecycler trailerDetailRecycler;
+    private MovieDatabase movieDatabase;
+    private VideoReviewDatabase videoReviewDatabase;
+    private MovieDetails movieDetails;
+    private DetailRecycler reviewDetailRecycler;
+    private DetailRecycler trailerDetailRecycler;
 
     private LiveDataVideoReviewModel mLiveDataVideoReviewModel;
-    int movieID;
+    private int movieID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -67,28 +66,22 @@ public class DetailsActivity extends AppCompatActivity implements
         movieID = getIntent().getIntExtra(MainActivity.MOVIE_ID, 0);
         mLiveDataVideoReviewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataVideoReviewModel.class);
 
-        Executors.newFixedThreadPool(1).execute(new Runnable() {
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                movieDatabase = MovieDatabase.getInstance(getApplicationContext());
-                movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
                 videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
-                mLiveDataVideoReviewModel.getVideoReviews().setValue(videoReviewDatabase.detailsDao().loadReview(movieID));
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if(movieDetails.isFavorite()){
-                            favoriteButton.setActivated(true);
-                        }
-                    }
-                });
+                if(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(movieID).size() < 1){
+                    GetWebData getWebData = new GetWebData(getApplication());
+                    mLiveDataVideoReviewModel.getVideoReviews().setValue(getWebData.getVideoReviewDetails(getString(R.string.moviedb_api_key),
+                            getString(R.string.google_youtube_api_key), movieID));
+                }else {
+                    mLiveDataVideoReviewModel.getVideoReviews().setValue(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(movieID));
+                }
             }
-
         });
 
-        reviewDetailRecycler = new DetailRecycler(this, this);
+        reviewDetailRecycler = new DetailRecycler(null, this);
         trailerDetailRecycler = new DetailRecycler(this, this);
-        startDetailService();
         createRecycler(reviewList, reviewDetailRecycler);
         createRecycler(trailerList, trailerDetailRecycler);
         setLiveData();
@@ -99,26 +92,30 @@ public class DetailsActivity extends AppCompatActivity implements
         }
     }
 
-    public void startDetailService(){
-        Intent intent = new Intent(DetailsActivity.this, GetWebData.class);
-        intent.putExtra(MainActivity.KEY, getString(R.string.moviedb_api_key)).putExtra(MOVIE_ID, movieID);
-        startService(intent);
-    }
-
     public void populateUI(){
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                Picasso.with(imageView.getContext())
-                        .load(movieDetails.getPosterPath())
-                        .noFade()
-                        .noPlaceholder()
-                        .into(imageView);
+                movieDatabase = MovieDatabase.getInstance(getApplication());
+                movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Picasso.with(imageView.getContext())
+                                .load(movieDetails.getPosterPath())
+                                .noFade()
+                                .noPlaceholder()
+                                .into(imageView);
 
-                plotTX.setText(movieDetails.getPlot());
-                ratingTX.setText(movieDetails.getRating());
-                dateTX.setText(movieDetails.getDate());
-                movieTitle.setText(movieDetails.getTitle());
+                        plotTX.setText(movieDetails.getPlot());
+                        ratingTX.setText(movieDetails.getRating());
+                        dateTX.setText(movieDetails.getDate());
+                        movieTitle.setText(movieDetails.getTitle());
+                        if(movieDetails.isFavorite()){
+                            favoriteButton.setActivated(true);
+                        }
+                    }
+                });
             }
         });
     }
@@ -156,7 +153,7 @@ public class DetailsActivity extends AppCompatActivity implements
 
     @Override
     public void onTrailerClicked(final int clickedPosition, View v) {
-        if(!v.getTag().toString().equals(TRAILER)){
+        if(v.getTag().toString().equals(TRAILER)){
             final Activity activity = this;
             Executors.newSingleThreadExecutor().execute(new Runnable() {
                 @Override
@@ -165,7 +162,7 @@ public class DetailsActivity extends AppCompatActivity implements
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
-                            Intent intent = YouTubeStandalonePlayer.createVideoIntent(activity , getString(R.string.moviedb_api_key), key);
+                            Intent intent = YouTubeStandalonePlayer.createVideoIntent(activity , getString(R.string.google_youtube_api_key), key);
                             startActivity(intent);
                         }
                     });
@@ -179,16 +176,10 @@ public class DetailsActivity extends AppCompatActivity implements
             @Override
             public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
                 trailerDetailRecycler.setDetails(videoReviewDetails);
-            }
-        };
-        final Observer<List<VideoReviewDetails>> reviewObserver = new Observer<List<VideoReviewDetails>>() {
-            @Override
-            public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
                 reviewDetailRecycler.setDetails(videoReviewDetails);
             }
         };
 
         mLiveDataVideoReviewModel.getVideoReviews().observe(this, videoObserver);
-        mLiveDataVideoReviewModel.getVideoReviews().observe(this, reviewObserver);
     }
 }

@@ -11,7 +11,6 @@ public class LiveDataMovieModel extends ViewModel {
 
     private MutableLiveData<List<MovieDetails>> mMovies;
 
-
     public MutableLiveData<List<MovieDetails>> getMovies() {
         if(mMovies == null){
             mMovies = new MutableLiveData<>();
