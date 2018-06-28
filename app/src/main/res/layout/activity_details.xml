@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView
- xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
@@ -14,7 +13,7 @@
         <TextView
             android:id="@+id/movie_title"
             android:layout_width="match_parent"
-            android:layout_height="150dp"
+            android:layout_height="wrap_content"
             android:gravity="center_vertical"
             android:textSize="50sp"
             android:textStyle="bold"
@@ -25,12 +24,13 @@
         <ImageView
             android:id="@+id/poster_image"
             android:layout_width="wrap_content"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
+            android:contentDescription="@string/image_poster"
             android:scaleType="fitXY"
             android:textAlignment="center"
             android:transitionName="poster"
-            android:contentDescription="@string/image_poster"
+            android:src="@drawable/favorite_pressed"
             app:layout_constraintBottom_toTopOf="@+id/plot_text"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.3"
@@ -80,17 +80,17 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="8dp"
-            android:onClick="addToFavorites"
             android:background="@drawable/favorites"
+            android:onClick="addToFavorites"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/date_text"
             app:layout_constraintTop_toBottomOf="@+id/plot_text" />
 
         <TextView
             android:id="@+id/trailer_list_text"
+            style="@style/margins"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="@style/margins"
             android:text="@string/trailer_string"
             app:layout_constraintEnd_toStartOf="@+id/date_text"
             app:layout_constraintStart_toStartOf="parent"
@@ -98,33 +98,35 @@
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/trailer_list"
+            style="@style/margins"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            style="@style/margins"
-            app:layout_constraintTop_toBottomOf="@+id/trailer_list_text"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintTop_toBottomOf="@+id/trailer_list_text" />
 
         <TextView
             android:id="@+id/review_list_text"
+            style="@style/margins"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            style="@style/margins"
+            android:layout_marginTop="8dp"
             android:text="@string/review_string"
+            app:layout_constraintBottom_toTopOf="@+id/review_list"
             app:layout_constraintEnd_toStartOf="@+id/date_text"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@+id/trailer_list"/>
+            app:layout_constraintTop_toBottomOf="@+id/trailer_list" />
+
 
         <android.support.v7.widget.RecyclerView
             android:id="@+id/review_list"
+            style="@style/margins"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            style="@style/margins"
-            android:visibility="gone"
-            app:layout_constraintTop_toBottomOf="@+id/review_list_text"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
+            app:layout_constraintTop_toBottomOf="@+id/review_list_text" />
 
     </android.support.constraint.ConstraintLayout>
-    </ScrollView>
+</ScrollView>
 

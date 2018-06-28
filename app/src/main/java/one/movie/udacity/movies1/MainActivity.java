@@ -13,6 +13,7 @@ import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.transition.Explode;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -65,7 +66,13 @@ public class MainActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 GetWebData getWebData = new GetWebData(getApplication());
-                mLiveDataMovieModel.getMovies().setValue(getWebData.getMovieDetails(getString(R.string.moviedb_api_key)));
+                final List<MovieDetails> initialList = getWebData.getMovieDetails(getString(R.string.moviedb_api_key));
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mLiveDataMovieModel.getMovies().setValue(initialList);
+                    }
+                });
             }
         });
 
@@ -102,9 +109,11 @@ public class MainActivity extends AppCompatActivity implements
             final List<MovieDetails> list = movieDatabase.movieDao().loadFavorites();
             list.clear();
             if (s.getBoolean(getString(R.string.popular_key), true)) {
+                Timber.i("Popular");
                 list.addAll(movieDatabase.movieDao().loadPopular());
             }
             if (s.getBoolean(getString(R.string.top_rated_key), true)) {
+                Timber.i("Top_Rated");
                 list.addAll(movieDatabase.movieDao().loadTopRated());
             }
             if (s.getBoolean(getString(R.string.favorites_key), true) && movieDatabase.movieDao().loadFavorites().size() > 0) {
@@ -113,6 +122,7 @@ public class MainActivity extends AppCompatActivity implements
             runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
+                    Timber.i("list: " + list);
                     mLiveDataMovieModel.getMovies().setValue(list);
                 }
             });

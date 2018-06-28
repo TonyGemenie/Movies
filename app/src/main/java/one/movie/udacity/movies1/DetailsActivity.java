@@ -11,6 +11,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -70,13 +71,19 @@ public class DetailsActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
-                if(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(movieID).size() < 1){
+                List<VideoReviewDetails> videoReviewDetails = videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(movieID));
+                if(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(movieID)).size() < 1){
                     GetWebData getWebData = new GetWebData(getApplication());
-                    mLiveDataVideoReviewModel.getVideoReviews().setValue(getWebData.getVideoReviewDetails(getString(R.string.moviedb_api_key),
-                            getString(R.string.google_youtube_api_key), movieID));
-                }else {
-                    mLiveDataVideoReviewModel.getVideoReviews().setValue(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(movieID));
+                     videoReviewDetails = getWebData.getVideoReviewDetails(getString(R.string.moviedb_api_key),
+                            getString(R.string.google_youtube_api_key), movieID);
                 }
+                final List<VideoReviewDetails> videoValue = videoReviewDetails;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        mLiveDataVideoReviewModel.getVideoReviews().setValue(videoValue);
+                    }
+                });
             }
         });
 
@@ -158,7 +165,7 @@ public class DetailsActivity extends AppCompatActivity implements
             Executors.newSingleThreadExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
-                    final String key = videoReviewDatabase.detailsDao().loadVideo(movieID).get(clickedPosition).getVideoKey();
+                    final String key = videoReviewDatabase.detailsDao().loadVideo(String.valueOf(movieID)).get(clickedPosition).getVideoKey();
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -175,8 +182,19 @@ public class DetailsActivity extends AppCompatActivity implements
         final Observer<List<VideoReviewDetails>> videoObserver = new Observer<List<VideoReviewDetails>>() {
             @Override
             public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
-                trailerDetailRecycler.setDetails(videoReviewDetails);
-                reviewDetailRecycler.setDetails(videoReviewDetails);
+                List<VideoReviewDetails> trailerList = videoReviewDetails;
+                List<VideoReviewDetails> reviewList = videoReviewDetails;
+                trailerList.clear();
+                reviewList.clear();
+                for (int i = 0; i < videoReviewDetails.size(); i++) {
+                    if(videoReviewDetails.get(i).getAuthor().isEmpty()){
+                        trailerList.add(videoReviewDetails.get(i));
+                    }else {
+                        reviewList.add(videoReviewDetails.get(i));
+                    }
+                }
+                trailerDetailRecycler.setDetails(trailerList);
+                reviewDetailRecycler.setDetails(reviewList);
             }
         };
 

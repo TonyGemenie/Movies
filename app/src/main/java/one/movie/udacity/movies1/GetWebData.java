@@ -1,6 +1,7 @@
 package one.movie.udacity.movies1;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.google.gson.FieldNamingPolicy;
 import com.google.gson.Gson;
@@ -55,7 +56,7 @@ public class GetWebData {
                     } else {
                         movieDetails.setToprated(true);
                     }
-                    movieDatabase.movieDao().insertMovie(movieDetails);
+                    movieDatabase.movieDao().updateMovie(movieDetails);
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -80,30 +81,29 @@ public class GetWebData {
                         .create();
                 JSONObject jsonObject = new JSONObject(Objects.requireNonNull(response.body()).string());
                 JSONArray arr = jsonObject.getJSONArray("results");
-                videoReviewDatabase.beginTransaction();
+
                 for (int j = 0; j < arr.length(); j++) {
                     VideoReviewDetails videoReviewDetails = gson.fromJson(arr.get(i).toString(), VideoReviewDetails.class);
                     if (videoReviewDetails.getType().equals("Trailer")) {
+                        String youtubeUrl = IMAGE_BASE + videoReviewDetails.getVideoKey() + "&key=" + youtubeKey + IMAGE_END;
                         Request youTubeRequest = new Request.Builder()
-                                .url(IMAGE_BASE + videoReviewDetails.getVideoKey() + "&key=" + youtubeKey + IMAGE_END)
+                                .url(youtubeUrl)
                                 .get()
                                 .build();
                         Response youTubeResponse = client.newCall(youTubeRequest).execute();
                         JSONObject obj = new JSONObject(Objects.requireNonNull(youTubeResponse.body()).string());
                         JSONArray imageArr = obj.getJSONArray("items");
-                        String image = imageArr.getJSONObject(0).getJSONObject("thumbnails").getJSONObject("medium").getString("url");
+                        String image = imageArr.getJSONObject(0).getJSONObject("snippet").getJSONObject("thumbnails").getJSONObject("medium").getString("url");
                         videoReviewDetails.setImageURL(image);
-                    } else {
-                        break;
                     }
-                    videoReviewDetails.setId(id);
+                    videoReviewDetails.setId(String.valueOf(id));
                     videoReviewDatabase.detailsDao().insertVideoReview(videoReviewDetails);
                 }
             } catch(Exception e){
                 e.printStackTrace();
             }
         }
-        return videoReviewDatabase.detailsDao().getMovieReviewsTrailers(id);
+        return videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(id));
     }
 }
 

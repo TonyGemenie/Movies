@@ -13,10 +13,10 @@ public interface VideoReviewDao {
     @Insert
     void insertVideoReview(VideoReviewDetails movieEntry);
 
-    @Query("SELECT * FROM detailsdatabase WHERE movieID = :id")
-    List<VideoReviewDetails> getMovieReviewsTrailers(int id);
+    @Query("SELECT * FROM detailsdatabase WHERE id = :id")
+    List<VideoReviewDetails> getMovieReviewsTrailers(String id);
 
-    @Query("SELECT * FROM detailsdatabase WHERE type = 'Trailer'  AND movieID = :id")
-    List<VideoReviewDetails> loadVideo(int id);
+    @Query("SELECT * FROM detailsdatabase WHERE type = 'Trailer'  AND id = :id")
+    List<VideoReviewDetails> loadVideo(String id);
 
 }

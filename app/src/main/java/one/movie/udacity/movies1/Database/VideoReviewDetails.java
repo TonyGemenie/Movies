@@ -8,33 +8,25 @@ public class VideoReviewDetails {
 
     @PrimaryKey(autoGenerate = true)
     int identity;
-    int movieID;
-    String imageURL;
-    String author;
-    String content;
-    String reviewid;
-    String reviewurl;
-    String videoId;
-    String iso_639_1;
-    String iso_3166_1;
-    String videoKey;
-    String videoName;
-    String site;
-    String size;
-    String type;
+    private String id;
+    private String imageURL;
+    private String author;
+    private String content;
+    private String iso_639_1;
+    private String iso_3166_1;
+    private String key;
+    private String site;
+    private String size;
+    private String type;
 
-    public VideoReviewDetails(int movieID, String imageURL, String author, String content, String reviewid, String reviewurl, String videoId, String iso_639_1,
-                              String iso_3166_1, String videoKey, String videoName, String site, String size, String type) {
-        this.movieID = movieID;
+    public VideoReviewDetails(String id, String author, String content, String iso_639_1,
+                              String iso_3166_1, String key, String site, String size, String type) {
+        this.id = id;
         this.author = author;
         this.content = content;
-        this.reviewid = reviewid;
-        this.reviewurl = reviewurl;
-        this.videoId = videoId;
         this.iso_639_1 = iso_639_1;
         this.iso_3166_1 = iso_3166_1;
-        this.videoKey = videoKey;
-        this.videoName = videoName;
+        this.key = key;
         this.site = site;
         this.size = size;
         this.type = type;
@@ -47,12 +39,12 @@ public class VideoReviewDetails {
         this.imageURL = imageURL;
     }
 
-    public int getId() {
-        return movieID;
+    public String getId() {
+        return id;
     }
 
-    public void setId(int id) {
-        this.movieID = id;
+    public void setId(String id) {
+        this.id = id;
     }
 
     public String getAuthor() {
@@ -69,30 +61,6 @@ public class VideoReviewDetails {
 
     public void setContent(String content) {
         this.content = content;
-    }
-
-    public String getReviewid() {
-        return reviewid;
-    }
-
-    public void setReviewid(String reviewid) {
-        this.reviewid = reviewid;
-    }
-
-    public String getReviewurl() {
-        return reviewurl;
-    }
-
-    public void setReviewurl(String reviewurl) {
-        this.reviewurl = reviewurl;
-    }
-
-    public String getVideoId() {
-        return videoId;
-    }
-
-    public void setVideoId(String videoId) {
-        this.videoId = videoId;
     }
 
     public String getIso_639_1() {
@@ -112,19 +80,11 @@ public class VideoReviewDetails {
     }
 
     public String getVideoKey() {
-        return videoKey;
+        return key;
     }
 
     public void setVideoKey(String videoKey) {
-        this.videoKey = videoKey;
-    }
-
-    public String getVideoName() {
-        return videoName;
-    }
-
-    public void setVideoName(String videoName) {
-        this.videoName = videoName;
+        this.key = key;
     }
 
     public String getSite() {
