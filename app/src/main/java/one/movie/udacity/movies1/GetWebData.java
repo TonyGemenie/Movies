@@ -56,7 +56,9 @@ public class GetWebData {
                     } else {
                         movieDetails.setToprated(true);
                     }
-                    movieDatabase.movieDao().updateMovie(movieDetails);
+                    if(movieDatabase.movieDao().loadMovieID(movieDetails.getId()) == null) {
+                        movieDatabase.movieDao().insertMovie(movieDetails);
+                    }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
@@ -83,18 +85,20 @@ public class GetWebData {
                 JSONArray arr = jsonObject.getJSONArray("results");
 
                 for (int j = 0; j < arr.length(); j++) {
-                    VideoReviewDetails videoReviewDetails = gson.fromJson(arr.get(i).toString(), VideoReviewDetails.class);
-                    if (videoReviewDetails.getType().equals("Trailer")) {
-                        String youtubeUrl = IMAGE_BASE + videoReviewDetails.getVideoKey() + "&key=" + youtubeKey + IMAGE_END;
-                        Request youTubeRequest = new Request.Builder()
-                                .url(youtubeUrl)
-                                .get()
-                                .build();
-                        Response youTubeResponse = client.newCall(youTubeRequest).execute();
-                        JSONObject obj = new JSONObject(Objects.requireNonNull(youTubeResponse.body()).string());
-                        JSONArray imageArr = obj.getJSONArray("items");
-                        String image = imageArr.getJSONObject(0).getJSONObject("snippet").getJSONObject("thumbnails").getJSONObject("medium").getString("url");
-                        videoReviewDetails.setImageURL(image);
+                    VideoReviewDetails videoReviewDetails = gson.fromJson(arr.get(j).toString(), VideoReviewDetails.class);
+                    if (!videoReviewDetails.getType().isEmpty()) {
+                        if(videoReviewDetails.getType().equals("Trailer")) {
+                            String youtubeUrl = IMAGE_BASE + videoReviewDetails.getVideoKey() + "&key=" + youtubeKey + IMAGE_END;
+                            Request youTubeRequest = new Request.Builder()
+                                    .url(youtubeUrl)
+                                    .get()
+                                    .build();
+                            Response youTubeResponse = client.newCall(youTubeRequest).execute();
+                            JSONObject obj = new JSONObject(Objects.requireNonNull(youTubeResponse.body()).string());
+                            JSONArray imageArr = obj.getJSONArray("items");
+                            String image = imageArr.getJSONObject(0).getJSONObject("snippet").getJSONObject("thumbnails").getJSONObject("medium").getString("url");
+                            videoReviewDetails.setImageURL(image);
+                        }
                     }
                     videoReviewDetails.setId(String.valueOf(id));
                     videoReviewDatabase.detailsDao().insertVideoReview(videoReviewDetails);

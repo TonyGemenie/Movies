@@ -66,13 +66,13 @@ public class DetailsActivity extends AppCompatActivity implements
         ButterKnife.bind(this);
         movieID = getIntent().getIntExtra(MainActivity.MOVIE_ID, 0);
         mLiveDataVideoReviewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataVideoReviewModel.class);
-
+        mLiveDataVideoReviewModel.getVideoReviews().observe(this, videoObserver);
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
                 videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
                 List<VideoReviewDetails> videoReviewDetails = videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(movieID));
-                if(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(movieID)).size() < 1){
+                if(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(movieID)).size() < 100){
                     GetWebData getWebData = new GetWebData(getApplication());
                      videoReviewDetails = getWebData.getVideoReviewDetails(getString(R.string.moviedb_api_key),
                             getString(R.string.google_youtube_api_key), movieID);
@@ -91,7 +91,6 @@ public class DetailsActivity extends AppCompatActivity implements
         trailerDetailRecycler = new DetailRecycler(this, this);
         createRecycler(reviewList, reviewDetailRecycler);
         createRecycler(trailerList, trailerDetailRecycler);
-        setLiveData();
         populateUI();
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null) {
@@ -165,7 +164,7 @@ public class DetailsActivity extends AppCompatActivity implements
             Executors.newSingleThreadExecutor().execute(new Runnable() {
                 @Override
                 public void run() {
-                    final String key = videoReviewDatabase.detailsDao().loadVideo(String.valueOf(movieID)).get(clickedPosition).getVideoKey();
+                    final String key = videoReviewDatabase.detailsDao().loadVideo(String.valueOf(movieID)).get(clickedPosition).getKey();
                     runOnUiThread(new Runnable() {
                         @Override
                         public void run() {
@@ -178,26 +177,22 @@ public class DetailsActivity extends AppCompatActivity implements
         }
     }
 
-    public void setLiveData(){
-        final Observer<List<VideoReviewDetails>> videoObserver = new Observer<List<VideoReviewDetails>>() {
-            @Override
-            public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
-                List<VideoReviewDetails> trailerList = videoReviewDetails;
-                List<VideoReviewDetails> reviewList = videoReviewDetails;
-                trailerList.clear();
-                reviewList.clear();
-                for (int i = 0; i < videoReviewDetails.size(); i++) {
-                    if(videoReviewDetails.get(i).getAuthor().isEmpty()){
-                        trailerList.add(videoReviewDetails.get(i));
-                    }else {
-                        reviewList.add(videoReviewDetails.get(i));
-                    }
+    final Observer<List<VideoReviewDetails>> videoObserver = new Observer<List<VideoReviewDetails>>() {
+        @Override
+        public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
+            List<VideoReviewDetails> trailerList = videoReviewDetails;
+            List<VideoReviewDetails> reviewList = videoReviewDetails;
+            trailerList.clear();
+            reviewList.clear();
+            for (int i = 0; i < videoReviewDetails.size(); i++) {
+                if(videoReviewDetails.get(i).getAuthor().isEmpty()){
+                    trailerList.add(videoReviewDetails.get(i));
+                }else {
+                    reviewList.add(videoReviewDetails.get(i));
                 }
-                trailerDetailRecycler.setDetails(trailerList);
-                reviewDetailRecycler.setDetails(reviewList);
             }
-        };
-
-        mLiveDataVideoReviewModel.getVideoReviews().observe(this, videoObserver);
-    }
+            trailerDetailRecycler.setDetails(trailerList);
+            reviewDetailRecycler.setDetails(reviewList);
+        }
+    };
 }
