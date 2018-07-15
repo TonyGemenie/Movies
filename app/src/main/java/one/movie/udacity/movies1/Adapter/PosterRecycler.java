@@ -1,6 +1,8 @@
 package one.movie.udacity.movies1.Adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -10,6 +12,7 @@ import android.widget.ImageView;
 
 import com.squareup.picasso.Picasso;
 
+import java.io.ByteArrayInputStream;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,8 +45,9 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
     @Override
     public void onBindViewHolder(@NonNull PosterRecycler.PosterVH holder, int position) {
         MovieDetails movieDetails = mList.get(position);
-        String imageUri = MainActivity.MOVIE_DB_IMAGE_BASE + MainActivity.IMAGE_SIZE + movieDetails.getPosterPath();
-        Picasso.with(mContext).load(imageUri).into(holder.posterImage);
+        ByteArrayInputStream is = new ByteArrayInputStream(movieDetails.getByteData());
+        Bitmap bitmap = BitmapFactory.decodeStream(is);
+        holder.posterImage.setImageBitmap(bitmap);
     }
 
     public void setList(List<MovieDetails> list){

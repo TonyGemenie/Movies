@@ -1,6 +1,8 @@
 package one.movie.udacity.movies1.Adapter;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
@@ -14,6 +16,8 @@ import com.squareup.picasso.Picasso;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.List;
 
 import butterknife.BindView;
@@ -24,7 +28,7 @@ import one.movie.udacity.movies1.R;
 
 public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerReviewVH> {
 
-    private List<VideoReviewDetails> mList;
+    private ArrayList<VideoReviewDetails> mList;
     private Context mContext;
     private DetailRecycler.onListClickListener mOnListClickListener;
 
@@ -43,21 +47,27 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
     @Override
     public void onBindViewHolder(@NonNull DetailRecycler.TrailerReviewVH holder, int position) {
         VideoReviewDetails videoReviewDetails = mList.get(position);
-        if(videoReviewDetails.getAuthor().isEmpty()) {
+        holder.bottomBar.setVisibility(View.GONE);
+        if(videoReviewDetails.getAuthor() == null) {
             holder.review.setVisibility(View.GONE);
-            Picasso.with(mContext).load(videoReviewDetails.getImageURL()).into(holder.image);
+            ByteArrayInputStream is = new ByteArrayInputStream(videoReviewDetails.getByteData());
+            Bitmap bitmap = BitmapFactory.decodeStream(is);
+            holder.image.setImageBitmap(bitmap);
             holder.review.setTag(DetailsActivity.TRAILER);
+            holder.bottomBar.setVisibility(View.VISIBLE);
+            holder.bottomBar.setColorFilter(DetailsActivity.bottomBarColor);
         }else {
             holder.image.setVisibility(View.GONE);
-            String review = videoReviewDetails.getContent() + "/n" + videoReviewDetails.getAuthor();
+            String review = videoReviewDetails.getContent() + "\n\n" + videoReviewDetails.getAuthor() + "\n";
             holder.review.setText(review);
+            holder.bottomBar.setVisibility(View.VISIBLE);
+            holder.bottomBar.setColorFilter(DetailsActivity.bottomBarColor);
         }
     }
 
-    public void setDetails(List<VideoReviewDetails> list){
+    public void setDetails(ArrayList<VideoReviewDetails> list){
         if(list != null) {
             mList = list;
-            notifyDataSetChanged();
         }
     }
 
@@ -70,13 +80,14 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
     }
 
     public interface onListClickListener{
-        void onTrailerClicked(int clickedPosition, View v);
+        void onTrailerClicked(int clickedPosition);
     }
 
     class TrailerReviewVH extends RecyclerView.ViewHolder implements View.OnClickListener {
 
         @BindView(R.id.review_text) TextView review;
         @BindView(R.id.trailer_image) ImageView image;
+        @BindView(R.id.imageView) ImageView bottomBar;
 
         public TrailerReviewVH(View itemView) {
             super(itemView);
@@ -86,7 +97,7 @@ public class DetailRecycler extends RecyclerView.Adapter<DetailRecycler.TrailerR
 
         @Override
         public void onClick(View v) {
-            mOnListClickListener.onTrailerClicked(getAdapterPosition(), v);
+            mOnListClickListener.onTrailerClicked(getAdapterPosition());
         }
     }
 }

@@ -65,14 +65,18 @@ public class MainActivity extends AppCompatActivity implements
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
-                GetWebData getWebData = new GetWebData(getApplication());
-                final List<MovieDetails> initialList = getWebData.getMovieDetails(getString(R.string.moviedb_api_key));
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mLiveDataMovieModel.getMovies().setValue(initialList);
-                    }
-                });
+                MovieDatabase movieDatabase = MovieDatabase.getInstance(getApplication());
+                List<MovieDetails> popularList = movieDatabase.movieDao().loadPopular();
+                if(popularList.isEmpty()) {
+                    GetWebData getWebData = new GetWebData(getApplication());
+                    final List<MovieDetails> initialList = getWebData.getMovieDetails(getString(R.string.moviedb_api_key));
+                    runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            mLiveDataMovieModel.getMovies().setValue(initialList);
+                        }
+                    });
+                }
             }
         });
 

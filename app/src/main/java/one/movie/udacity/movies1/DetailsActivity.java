@@ -1,17 +1,16 @@
 package one.movie.udacity.movies1;
 
 import android.app.Activity;
-import android.arch.lifecycle.Observer;
-import android.arch.lifecycle.ViewModelProvider;
 import android.content.Intent;
-import android.support.annotation.Nullable;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.support.v4.app.NavUtils;
 import android.support.v7.app.ActionBar;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.graphics.Palette;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -19,8 +18,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.google.android.youtube.player.YouTubeStandalonePlayer;
-import com.squareup.picasso.Picasso;
 
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.Executors;
 
@@ -47,6 +47,8 @@ public class DetailsActivity extends AppCompatActivity implements
     @BindView(R.id.review_list) RecyclerView reviewList;
     @BindView(R.id.movie_title) TextView movieTitle;
     @BindView(R.id.favorite_button) Button favoriteButton;
+    @BindView(R.id.review_bar) ImageView reviewBar;
+    @BindView(R.id.trailer_bar) ImageView trailerBar;
     @BindViews({R.id.plot_text, R.id.rating_text, R.id.date_text})List<TextView> textViews;
 
     private MovieDatabase movieDatabase;
@@ -55,7 +57,8 @@ public class DetailsActivity extends AppCompatActivity implements
     private DetailRecycler reviewDetailRecycler;
     private DetailRecycler trailerDetailRecycler;
 
-    private LiveDataVideoReviewModel mLiveDataVideoReviewModel;
+    public static int bottomBarColor;
+
     private int movieID;
 
     @Override
@@ -65,25 +68,17 @@ public class DetailsActivity extends AppCompatActivity implements
 
         ButterKnife.bind(this);
         movieID = getIntent().getIntExtra(MainActivity.MOVIE_ID, 0);
-        mLiveDataVideoReviewModel = new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataVideoReviewModel.class);
-        mLiveDataVideoReviewModel.getVideoReviews().observe(this, videoObserver);
         Executors.newSingleThreadExecutor().execute(new Runnable() {
             @Override
             public void run() {
                 videoReviewDatabase = VideoReviewDatabase.getInstance(getApplicationContext());
                 List<VideoReviewDetails> videoReviewDetails = videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(movieID));
-                if(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(movieID)).size() < 100){
+                if(videoReviewDatabase.detailsDao().getMovieReviewsTrailers(String.valueOf(movieID)).size() < 1){
                     GetWebData getWebData = new GetWebData(getApplication());
                      videoReviewDetails = getWebData.getVideoReviewDetails(getString(R.string.moviedb_api_key),
                             getString(R.string.google_youtube_api_key), movieID);
                 }
-                final List<VideoReviewDetails> videoValue = videoReviewDetails;
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mLiveDataVideoReviewModel.getVideoReviews().setValue(videoValue);
-                    }
-                });
+                setRecyclerLists(videoReviewDetails);
             }
         });
 
@@ -94,6 +89,7 @@ public class DetailsActivity extends AppCompatActivity implements
         populateUI();
         ActionBar actionBar = getSupportActionBar();
         if(actionBar != null) {
+            actionBar.setTitle(R.string.app_name);
             actionBar.setDisplayHomeAsUpEnabled(true);
         }
     }
@@ -107,11 +103,20 @@ public class DetailsActivity extends AppCompatActivity implements
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
-                        Picasso.with(imageView.getContext())
-                                .load(movieDetails.getPosterPath())
-                                .noFade()
-                                .noPlaceholder()
-                                .into(imageView);
+                        if(movieDetails.isFavorite()){
+                            favoriteButton.setBackground(getDrawable(R.drawable.ic_baseline_star_pressed_24px));
+                        }
+                        ByteArrayInputStream is = new ByteArrayInputStream(movieDetails.getByteData());
+                        Bitmap bitmap = BitmapFactory.decodeStream(is);
+                        imageView.setImageBitmap(bitmap);
+                        Palette palette = Palette.from(bitmap).generate();
+
+                        int defaultPanelColor = 0xFF808080;
+                        bottomBarColor = palette.getDarkMutedColor(defaultPanelColor);
+                        reviewBar.setColorFilter(bottomBarColor);
+                        trailerBar.setColorFilter(bottomBarColor);
+                        movieTitle.setBackgroundColor(bottomBarColor);
+                        movieTitle.setTextColor(palette.getLightVibrantColor(defaultPanelColor));
 
                         plotTX.setText(movieDetails.getPlot());
                         ratingTX.setText(movieDetails.getRating());
@@ -139,12 +144,22 @@ public class DetailsActivity extends AppCompatActivity implements
             @Override
             public void run() {
                 MovieDetails movieDetails = movieDatabase.movieDao().loadMovieID(movieID);
+                int drawableID;
                 if(movieDetails.isFavorite()){
                     movieDetails.setFavorite(false);
+                    drawableID = R.drawable.ic_baseline_star_24px;
                 }else {
                     movieDetails.setFavorite(true);
+                    drawableID = R.drawable.ic_baseline_star_pressed_24px;
                 }
                 movieDatabase.movieDao().updateMovie(movieDetails);
+                final int finalDrawableID = drawableID;
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        favoriteButton.setBackground(getDrawable(finalDrawableID));
+                    }
+                });
             }
         });
     }
@@ -158,34 +173,28 @@ public class DetailsActivity extends AppCompatActivity implements
     }
 
     @Override
-    public void onTrailerClicked(final int clickedPosition, View v) {
-        if(v.getTag().toString().equals(TRAILER)){
-            final Activity activity = this;
-            Executors.newSingleThreadExecutor().execute(new Runnable() {
-                @Override
-                public void run() {
-                    final String key = videoReviewDatabase.detailsDao().loadVideo(String.valueOf(movieID)).get(clickedPosition).getKey();
-                    runOnUiThread(new Runnable() {
-                        @Override
-                        public void run() {
-                            Intent intent = YouTubeStandalonePlayer.createVideoIntent(activity , getString(R.string.google_youtube_api_key), key);
-                            startActivity(intent);
-                        }
-                    });
-                }
-            });
-        }
+    public void onTrailerClicked(final int clickedPosition) {
+        final Activity activity = this;
+        Executors.newSingleThreadExecutor().execute(new Runnable() {
+            @Override
+            public void run() {
+                final String key = videoReviewDatabase.detailsDao().loadVideo(String.valueOf(movieID)).get(clickedPosition).getKey();
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        Intent intent = YouTubeStandalonePlayer.createVideoIntent(activity , getString(R.string.google_youtube_api_key), key);
+                        startActivity(intent);
+                    }
+                });
+            }
+        });
     }
 
-    final Observer<List<VideoReviewDetails>> videoObserver = new Observer<List<VideoReviewDetails>>() {
-        @Override
-        public void onChanged(@Nullable List<VideoReviewDetails> videoReviewDetails) {
-            List<VideoReviewDetails> trailerList = videoReviewDetails;
-            List<VideoReviewDetails> reviewList = videoReviewDetails;
-            trailerList.clear();
-            reviewList.clear();
+    private void setRecyclerLists(List<VideoReviewDetails> videoReviewDetails){
+            ArrayList<VideoReviewDetails> trailerList = new ArrayList<>();
+            ArrayList<VideoReviewDetails> reviewList = new ArrayList<>();
             for (int i = 0; i < videoReviewDetails.size(); i++) {
-                if(videoReviewDetails.get(i).getAuthor().isEmpty()){
+                if(videoReviewDetails.get(i).getAuthor() == null){
                     trailerList.add(videoReviewDetails.get(i));
                 }else {
                     reviewList.add(videoReviewDetails.get(i));
@@ -193,6 +202,14 @@ public class DetailsActivity extends AppCompatActivity implements
             }
             trailerDetailRecycler.setDetails(trailerList);
             reviewDetailRecycler.setDetails(reviewList);
-        }
-    };
+            runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    reviewDetailRecycler.notifyDataSetChanged();
+                    trailerDetailRecycler.notifyDataSetChanged();
+                }
+            });
+
+    }
 }
+

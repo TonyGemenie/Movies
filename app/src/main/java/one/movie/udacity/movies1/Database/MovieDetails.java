@@ -19,8 +19,11 @@ public class MovieDetails {
     String releaseDate;
     String posterPath;
     String originalLanguage;
+    byte[] byteData;
 
-    public MovieDetails(boolean favorite, boolean popular, boolean toprated, int id, int voteCount, float popularity, String title, String overview, String voteAverage, String releaseDate, String posterPath, String originalLanguage) {
+    public MovieDetails(boolean favorite, boolean popular, boolean toprated, int id, int voteCount, float popularity,
+                        String title, String overview, String voteAverage, String releaseDate, String posterPath,
+                        String originalLanguage, byte[] byteData) {
         this.favorite = favorite;
         this.popular = popular;
         this.toprated = toprated;
@@ -33,6 +36,7 @@ public class MovieDetails {
         this.releaseDate = releaseDate;
         this.posterPath = posterPath;
         this.originalLanguage = originalLanguage;
+        this.byteData = byteData;
     }
 
     public boolean isFavorite() {
@@ -130,9 +134,13 @@ public class MovieDetails {
     public void setOriginalLanguage(String originalLanguage) {
         this.originalLanguage = originalLanguage;
     }
+    public byte[] getByteData() {
+        return byteData;
+    }
 
-
-
+    public void setByteData(byte[] byteData) {
+        this.byteData = byteData;
+    }
 
 }
 

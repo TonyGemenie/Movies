@@ -1,6 +1,8 @@
 package one.movie.udacity.movies1;
 
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.util.Log;
 
 import com.google.gson.FieldNamingPolicy;
@@ -10,6 +12,11 @@ import com.google.gson.GsonBuilder;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.URL;
 import java.util.List;
 import java.util.Objects;
 
@@ -57,7 +64,17 @@ public class GetWebData {
                         movieDetails.setToprated(true);
                     }
                     if(movieDatabase.movieDao().loadMovieID(movieDetails.getId()) == null) {
+                        URL imageurl = new URL(MainActivity.MOVIE_DB_IMAGE_BASE + MainActivity.IMAGE_SIZE + movieDetails.getPosterPath());
+                        HttpURLConnection connection = (HttpURLConnection) imageurl.openConnection();
+                        connection.connect();
+                        InputStream input = connection.getInputStream();
+                        Bitmap bitmap = BitmapFactory.decodeStream(input);
+                        ByteArrayOutputStream os = new ByteArrayOutputStream();
+                        bitmap.compress(Bitmap.CompressFormat.PNG, 0, os);
+                        byte[] bitmapdata = os.toByteArray();
+                        movieDetails.setByteData(bitmapdata);
                         movieDatabase.movieDao().insertMovie(movieDetails);
+
                     }
                 }
             } catch (Exception e) {
@@ -86,7 +103,7 @@ public class GetWebData {
 
                 for (int j = 0; j < arr.length(); j++) {
                     VideoReviewDetails videoReviewDetails = gson.fromJson(arr.get(j).toString(), VideoReviewDetails.class);
-                    if (!videoReviewDetails.getType().isEmpty()) {
+                    if (videoReviewDetails.getType() != null) {
                         if(videoReviewDetails.getType().equals("Trailer")) {
                             String youtubeUrl = IMAGE_BASE + videoReviewDetails.getVideoKey() + "&key=" + youtubeKey + IMAGE_END;
                             Request youTubeRequest = new Request.Builder()
@@ -98,10 +115,23 @@ public class GetWebData {
                             JSONArray imageArr = obj.getJSONArray("items");
                             String image = imageArr.getJSONObject(0).getJSONObject("snippet").getJSONObject("thumbnails").getJSONObject("medium").getString("url");
                             videoReviewDetails.setImageURL(image);
+                            URL trailerImage = new URL(image);
+                            HttpURLConnection connection = (HttpURLConnection) trailerImage.openConnection();
+                            connection.connect();
+                            InputStream input = connection.getInputStream();
+                            Bitmap bitmap = BitmapFactory.decodeStream(input);
+                            ByteArrayOutputStream os = new ByteArrayOutputStream();
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 0, os);
+                            byte[] bitmapdata = os.toByteArray();
+                            videoReviewDetails.setByteData(bitmapdata);
+                            videoReviewDetails.setId(String.valueOf(id));
+                            videoReviewDatabase.detailsDao().insertVideoReview(videoReviewDetails);
                         }
                     }
-                    videoReviewDetails.setId(String.valueOf(id));
-                    videoReviewDatabase.detailsDao().insertVideoReview(videoReviewDetails);
+                    if(videoReviewDetails.getAuthor() != null){
+                        videoReviewDetails.setId(String.valueOf(id));
+                        videoReviewDatabase.detailsDao().insertVideoReview(videoReviewDetails);
+                    }
                 }
             } catch(Exception e){
                 e.printStackTrace();

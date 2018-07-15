@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Movies1</string>
+    <string name="app_name">Movies</string>
     <string name="movie_db">This product uses the TMDb API but is not endorsed or certified by TMDb.</string>
     <string name="search_terms">Search Terms</string>
     <string name="pref_hint_on">ON</string>

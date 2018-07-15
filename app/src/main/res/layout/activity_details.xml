@@ -30,7 +30,7 @@
             android:scaleType="fitXY"
             android:textAlignment="center"
             android:transitionName="poster"
-            android:src="@drawable/favorites"
+            android:src="@drawable/ic_baseline_star_24px"
             app:layout_constraintBottom_toTopOf="@+id/plot_text"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintHorizontal_bias="0.3"
@@ -80,7 +80,7 @@
             android:layout_width="40dp"
             android:layout_height="40dp"
             android:layout_marginStart="8dp"
-            android:background="@drawable/favorites"
+            android:background="@drawable/ic_baseline_star_24px"
             android:onClick="addToFavorites"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="@+id/date_text"
@@ -92,6 +92,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="@string/trailer_string"
+            android:textSize="30sp"
             app:layout_constraintEnd_toStartOf="@+id/date_text"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/plot_text" />
@@ -101,6 +102,7 @@
             style="@style/margins"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:paddingBottom="16dp"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/trailer_list_text" />
@@ -111,11 +113,37 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
+            android:paddingTop="16dp"
             android:text="@string/review_string"
+            android:textSize="30sp"
             app:layout_constraintBottom_toTopOf="@+id/review_list"
             app:layout_constraintEnd_toStartOf="@+id/date_text"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@+id/trailer_list" />
+
+        <ImageView
+            android:id="@+id/trailer_bar"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginStart="16dp"
+            android:scaleType="fitXY"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/trailer_list_text"
+            app:srcCompat="@android:drawable/bottom_bar" />
+
+        <ImageView
+            android:id="@+id/review_bar"
+            android:layout_width="match_parent"
+            android:layout_height="4dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginStart="16dp"
+            android:scaleType="fitXY"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/review_list_text"
+            app:srcCompat="@android:drawable/bottom_bar" />
 
 
         <android.support.v7.widget.RecyclerView

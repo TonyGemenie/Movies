@@ -7,7 +7,7 @@ import android.arch.persistence.room.RoomDatabase;
 import android.arch.persistence.room.migration.Migration;
 import android.content.Context;
 
-@Database(entities = {VideoReviewDetails.class}, version = 3, exportSchema = false)
+@Database(entities = {VideoReviewDetails.class}, version = 4, exportSchema = false)
 public abstract class VideoReviewDatabase extends RoomDatabase {
 
     static final Migration MIGRATION = new Migration(1, 2) {

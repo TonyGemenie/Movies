@@ -18,9 +18,10 @@ public class VideoReviewDetails {
     private String site;
     private String size;
     private String type;
+    private byte[] byteData;
 
     public VideoReviewDetails(String id, String author, String content, String iso_639_1,
-                              String iso_3166_1, String key, String site, String size, String type) {
+                              String iso_3166_1, String key, String site, String size, String type, byte[] byteData) {
         this.id = id;
         this.author = author;
         this.content = content;
@@ -30,7 +31,9 @@ public class VideoReviewDetails {
         this.site = site;
         this.size = size;
         this.type = type;
+        this.byteData = byteData;
     }
+
     public String getImageURL() {
         return imageURL;
     }
@@ -105,5 +108,13 @@ public class VideoReviewDetails {
 
     public void setKey(String key) {
         this.key = key;
+    }
+
+    public byte[] getByteData() {
+        return byteData;
+    }
+
+    public void setByteData(byte[] byteData) {
+        this.byteData = byteData;
     }
 }

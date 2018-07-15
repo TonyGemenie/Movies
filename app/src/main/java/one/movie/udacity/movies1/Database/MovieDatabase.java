@@ -7,7 +7,7 @@ import android.arch.persistence.room.RoomDatabase;
 import android.arch.persistence.room.migration.Migration;
 import android.content.Context;
 
-@Database(entities = {MovieDetails.class}, version = 1, exportSchema = false)
+@Database(entities = {MovieDetails.class}, version = 2, exportSchema = false)
 public abstract class MovieDatabase extends RoomDatabase {
 
     private static final String DATABASE = "moviedatabase";
@@ -19,6 +19,7 @@ public abstract class MovieDatabase extends RoomDatabase {
             synchronized (new Object()) {
                 movieDatabase = Room.databaseBuilder(context.getApplicationContext(),
                         MovieDatabase.class, MovieDatabase.DATABASE)
+                        .fallbackToDestructiveMigration()
                         .build();
             }
         }
