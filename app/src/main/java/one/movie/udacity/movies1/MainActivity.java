@@ -4,7 +4,7 @@ import android.arch.lifecycle.Observer;
 import android.arch.lifecycle.ViewModelProvider;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.graphics.Movie;
+import android.os.Parcelable;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -13,11 +13,9 @@ import android.os.Bundle;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.StaggeredGridLayoutManager;
 import android.transition.Explode;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.Toast;
 
 import java.util.List;
 import java.util.concurrent.Executors;
@@ -34,17 +32,14 @@ public class MainActivity extends AppCompatActivity implements
         SharedPreferences.OnSharedPreferenceChangeListener,
         PosterRecycler.vHClickListener{
 
-    public static final String RESULTS = "results";
     public static final String MOVIE_ID = "json_string";
     private static final String POSITION = "position";
     public static final String MOVIE_DB_IMAGE_BASE = "http://image.tmdb.org/t/p/";
-    public static final String SAVED_STRING = "saved_string";
     public static final String IMAGE_SIZE = "w185";
-    public static final String KEY = "key";
     private LiveDataMovieModel mLiveDataMovieModel;
     SharedPreferences s;
     private PosterRecycler posterRecycler;
-    MovieDatabase movieDatabase;
+    Bundle bundled;
 
     @BindView(R.id.poster_list) RecyclerView posterList;
 
@@ -59,6 +54,9 @@ public class MainActivity extends AppCompatActivity implements
 
         s = PreferenceManager.getDefaultSharedPreferences(this);
         s.registerOnSharedPreferenceChangeListener(this);
+        if(savedInstanceState != null){
+            bundled = savedInstanceState;
+        }
 
         mLiveDataMovieModel =  new ViewModelProvider.AndroidViewModelFactory(getApplication()).create(LiveDataMovieModel.class);
         mLiveDataMovieModel.getMovies().observe(this, posterObserver);
@@ -90,9 +88,8 @@ public class MainActivity extends AppCompatActivity implements
         Timber.i("createRecycler: start");
         StaggeredGridLayoutManager staggeredGridLayoutManager = new StaggeredGridLayoutManager(2, StaggeredGridLayoutManager.VERTICAL);
         posterList.setLayoutManager(staggeredGridLayoutManager);
-        posterRecycler = new PosterRecycler(this, this);
+        posterRecycler = new PosterRecycler(this);
         posterList.setAdapter(posterRecycler);
-        posterList.scrollToPosition(s.getInt(POSITION, 0));
         Timber.i("createRecycler: stop");
     }
 
@@ -128,6 +125,9 @@ public class MainActivity extends AppCompatActivity implements
                 public void run() {
                     Timber.i("list: " + list);
                     mLiveDataMovieModel.getMovies().setValue(list);
+                    if(bundled != null) {
+                        posterList.getLayoutManager().onRestoreInstanceState(bundled.getParcelable(POSITION));
+                    }
                 }
             });
             Timber.i("createMediator: Runnable: Stop");
@@ -143,7 +143,8 @@ public class MainActivity extends AppCompatActivity implements
     @Override
     protected void onSaveInstanceState(Bundle outState) {
         super.onSaveInstanceState(outState);
-        outState.putString(SAVED_STRING, RESULTS);
+        Parcelable recyclerViewState = posterList.getLayoutManager().onSaveInstanceState();
+        outState.putParcelable(POSITION, recyclerViewState);
     }
 
     @Override

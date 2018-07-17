@@ -4,6 +4,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.support.annotation.NonNull;
+import android.support.v7.widget.LinearSmoothScroller;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -28,11 +29,9 @@ public class PosterRecycler extends RecyclerView.Adapter<PosterRecycler.PosterVH
 
     private List<MovieDetails> mList;
     private vHClickListener mVHClickListener;
-    private Context mContext;
 
-    public PosterRecycler(vHClickListener listener, Context context) {
+    public PosterRecycler(vHClickListener listener) {
         mVHClickListener = listener;
-        mContext = context;
     }
 
     @NonNull
